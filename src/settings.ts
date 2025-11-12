@@ -1,15 +1,15 @@
 import { App, PluginSettingTab, Setting } from 'obsidian'
 import MyPlugin from './main'
 
-export interface MyPluginSettings {
-  mySetting: string;
+export interface DoPluginSettings {
+  taskBlockPrefix: string;
 }
 
-export const DEFAULT_SETTINGS: MyPluginSettings = {
-  mySetting: 'default'
+export const DEFAULT_SETTINGS: DoPluginSettings = {
+  taskBlockPrefix: 'do'
 }
 
-export class MySettingTab extends PluginSettingTab {
+export class DoSettingTab extends PluginSettingTab {
   plugin: MyPlugin
 
   constructor (app: App, plugin: MyPlugin) {
@@ -23,13 +23,13 @@ export class MySettingTab extends PluginSettingTab {
     containerEl.empty()
 
     new Setting(containerEl)
-      .setName('Setting #1')
-      .setDesc('It\'s a secret')
+      .setName('Task block prefix')
+      .setDesc('')
       .addText(text => text
-        .setPlaceholder('Enter your secret')
-        .setValue(this.plugin.settings.mySetting)
+        .setPlaceholder('do')
+        .setValue(this.plugin.settings.taskBlockPrefix)
         .onChange(async (value) => {
-          this.plugin.settings.mySetting = value
+          this.plugin.settings.taskBlockPrefix = value
           await this.plugin.saveSettings()
         }))
   }
