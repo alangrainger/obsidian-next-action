@@ -9,7 +9,7 @@ export default class TasklistPlugin extends Plugin {
     await this.loadSettings()
 
     this.registerEvent(this.app.metadataCache.on('changed', (file, data, cache) => {
-      processTasksFromCacheUpdate(file, data, cache)
+      processTasksFromCacheUpdate({ file, data, cache })
     }))
   }
 

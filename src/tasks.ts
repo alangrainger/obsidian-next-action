@@ -1,11 +1,17 @@
 import { CachedMetadata, TFile } from 'obsidian'
+import { Task } from './classes/task'
 
-export function processTasksFromCacheUpdate (file: TFile, data: string, cache: CachedMetadata) {
+export interface CacheUpdate {
+  file: TFile, data: string, cache: CachedMetadata
+}
 
-  console.log('file', file)
-  console.log('data', data)
-  console.log('cache', cache)
+export function processTasksFromCacheUpdate (cacheUpdate: CacheUpdate) {
 
-  const tasks = cache.listItems?.filter(x => x.task) || []
-  console.log(tasks)
+  console.log('file', cacheUpdate.file)
+  console.log('data', cacheUpdate.data)
+  console.log('cache', cacheUpdate.cache)
+
+  const tasks = cacheUpdate.cache.listItems?.filter(x => x.task) || []
+  const task = new Task()
+  task.initFromListItem(tasks[1], cacheUpdate)
 }
