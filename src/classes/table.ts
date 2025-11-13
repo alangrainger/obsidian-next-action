@@ -138,11 +138,13 @@ export class Table<R extends BaseRow> {
    */
   async loadDb () {
     try {
-      const data = await this.app.vault.adapter.read(this.filename)
-      this.data = JSON.parse(data)
-      // Double-check the autoincrement
-      const existing = Math.max(...this.data.rows.map(x => x.id)) || 0
-      this.data.autoincrement = Math.max(this.data.autoincrement, existing + 1)
+      if (await this.app.vault.adapter.exists(this.filename)) {
+        const data = await this.app.vault.adapter.read(this.filename)
+        this.data = JSON.parse(data)
+        // Double-check the autoincrement
+        const existing = Math.max(...this.data.rows.map(x => x.id)) || 0
+        this.data.autoincrement = Math.max(this.data.autoincrement, existing + 1)
+      }
       this.initialised = true
     } catch (e) {
       // nothing

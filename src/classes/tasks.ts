@@ -22,6 +22,8 @@ export class Tasks {
   }
 
   async processTasksFromCacheUpdate (cacheUpdate: CacheUpdate) {
+    if (!this.db.initialised) return
+
     const processed: { task: Task, cacheItem: ListItemCache }[] = []
     for (const item of (cacheUpdate.cache.listItems?.filter(x => x.task) || [])) {
       const task = new Task(this)
@@ -36,7 +38,7 @@ export class Tasks {
         row.path === cacheUpdate.file.path &&
         !processedIds.includes(row.id))
       .forEach(task => {
-        task.orphaned = moment.default().valueOf()
+        task.orphaned = moment().valueOf()
         this.db.saveDb()
       })
 
@@ -59,7 +61,7 @@ export class Tasks {
         console.log('Cache and file differ')
         processed.forEach(row => {
           if (row.task.id) {
-            row.task.orphaned = moment.default().valueOf()
+            row.task.orphaned = moment().valueOf()
             this.db.update(row.task.getData())
           }
         })

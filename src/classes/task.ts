@@ -106,15 +106,14 @@ export class Task {
     // Check if this ID has already been used on this page (duplicate ID)
     if (parsed.id && blacklistIds.includes(parsed.id)) parsed.id = 0
 
-    // Get task from DB
     const record = Object.assign({}, DEFAULT_ROW)
+    record.created = moment().format()
+
+    // Get task from DB
     if (parsed.id) {
       // Existing row
       const existing = this.tasks.db.getRow(parsed.id)
       if (existing) Object.assign(record, existing)
-    } else {
-      // New record
-      record.created = moment().format()
     }
     // Update the record from the parsed data
     Object.assign(record, {
