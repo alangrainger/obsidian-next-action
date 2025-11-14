@@ -1,14 +1,12 @@
 <script lang="ts">
   import { slide } from 'svelte/transition'
   import type { State } from '../view-types'
-  import type DoPlugin from '../../main'
 
   interface Props {
     state: State;
-    plugin: DoPlugin;
   }
 
-  let { state, plugin }: Props = $props()
+  let { state }: Props = $props()
 
   let activeTask = $derived(state.tasks.find(x => x.id === state.activeId))
 
@@ -29,7 +27,6 @@
             <div class="setting-item-name">Task</div>
             <!--<div class="setting-item-description"></div>-->
             <input type="text" spellcheck="false" bind:value={activeTask.text} oninput={updateDb}>
-            <p>{activeTask.text}</p>
         </div>
     </aside>
 {/if}

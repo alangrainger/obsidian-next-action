@@ -8,6 +8,7 @@
   import type { State } from '../view-types'
   import { DatabaseEvent, dbEvents } from '../../classes/database-events'
   import type { Task } from '../../classes/task.svelte'
+  import {moment} from '../../functions'
 
   interface Props {
     plugin: DoPlugin;
@@ -41,6 +42,12 @@
     }
   }
 
+  function backgroundClick (event: any) {
+    if (event.target === event.currentTarget) {
+      state.sidebar.open = false
+    }
+  }
+
   // Update tasks list when tasks DB changes
   dbEvents.on(DatabaseEvent.TasksExternalChange, updateView)
 
@@ -55,15 +62,20 @@
   })
 </script>
 
-<div class="gtd-view">
-    <Sidebar state={state} plugin={plugin}></Sidebar>
+<div class="gtd-view"
+     onclick={backgroundClick}
+     onkeydown={backgroundClick}
+     role="dialog"
+     tabindex="-1"
+>
+    <Sidebar {state}/>
     <table class="gtd-table">
         <thead>
         <tr>
             <th></th>
             <th>Task</th>
             <th>Note</th>
-            <th>Status</th>
+            <th>Created</th>
         </tr>
         </thead>
         <tbody>
@@ -82,7 +94,7 @@
                         <NoteLink app={plugin.app} path={task.path}/>
                     </div>
                 </td>
-                <td>{task.status}</td>
+                <td>{moment(task.created).format('D MMM YYYY')}</td>
             </tr>
         {/each}
         </tbody>

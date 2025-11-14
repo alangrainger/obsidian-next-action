@@ -36,7 +36,7 @@ export class Tasks {
   async processTasksFromCacheUpdate (cacheUpdate: CacheUpdate) {
     if (!this.db.initialised) return
 
-    console.log('PROCESSING cache update for ' + cacheUpdate.file.path)
+    debug('Processing cache update for ' + cacheUpdate.file.path)
 
     const processed: { task: Task, cacheItem: ListItemCache }[] = []
     const updated: Task[] = []
@@ -59,9 +59,8 @@ export class Tasks {
         this.db.saveDb()
       })
 
-    // Update the file markdown contents if needed
-    // Modify the original markdown task line if necessary
-    /*let updatedCount = 0
+    // Update the file markdown contents if needed, for example to add task IDs
+    let updatedCount = 0
     await this.plugin.app.vault.process(cacheUpdate.file, data => {
       if (cacheUpdate.data === data) {
         // The live file contents is the same as the expected contents from the cache
@@ -80,7 +79,7 @@ export class Tasks {
         // Cache and file differ - this is bad.
         // We don't want to modify the file here and risk content loss.
         // Orphan these tasks in the DB and re-process them again next time.
-        console.log('Cache and file differ')
+        debug('Cache and file differ')
         processed.forEach(row => {
           if (row.task.id) {
             row.task.orphaned = moment().valueOf()
@@ -89,7 +88,8 @@ export class Tasks {
         })
       }
       return data
-    })*/
+    })
+
     debug('updated # ' + updated.length)
     if (updated.length) {
       dbEvents.emit(DatabaseEvent.TasksExternalChange)
@@ -110,6 +110,8 @@ export class Tasks {
         task.initFromRow(row)
         return task
       })
+      // Sort by created date - oldest task first
+      .sort((a, b) => a.created.localeCompare(b.created))
   }
 
   /**
