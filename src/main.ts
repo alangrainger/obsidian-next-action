@@ -18,7 +18,7 @@ export default class DoPlugin extends Plugin {
 
     this.registerView(
       GTD_VIEW_TYPE,
-      (leaf) => new GtdView(leaf, this)
+      leaf => new GtdView(leaf, this)
     )
     this.addRibbonIcon('dice', 'Activate view', () => {
       this.activateView()
@@ -31,6 +31,13 @@ export default class DoPlugin extends Plugin {
         console.log('Processing ' + file.basename)
         this.tasks.processTasksFromCacheUpdate({ file, data, cache })
       }, 3000)
+    }))
+
+    // Update the tasks table when user switches to that view
+    this.registerEvent(this.app.workspace.on('active-leaf-change', (leaf) => {
+      if (leaf?.view instanceof GtdView) {
+        leaf.view.update()
+      }
     }))
   }
 

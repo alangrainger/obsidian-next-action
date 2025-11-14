@@ -14,6 +14,8 @@ export enum TaskEmoji {
 }
 
 export interface TaskRow {
+  [key: string]: any
+
   id: number,
   status: string,
   text: string,
@@ -48,6 +50,7 @@ export class Task {
   text = ''
   path = ''
   orphaned = 0
+  created = ''
 
   constructor (tasks: Tasks) {
     this.tasks = tasks
@@ -61,6 +64,27 @@ export class Task {
     return !!this.id
   }
 
+  isDirty () {
+    if (!this.id) {
+      console.log('new')
+      return true
+    } // new task
+    // Get DB data
+    const dbData = this.tasks.db.getRow(this.id)
+    if (!dbData) {
+      console.log('no dbdata')
+      return true
+    } else {
+      const data = this.getData()
+      console.log(data, dbData)
+      const res = Object.keys(data).some(key => data[key] !== dbData[key])
+      if (res) {
+        console.log(data, dbData)
+      }
+      return res
+    }
+  }
+
   getData (): TaskRow {
     return {
       id: this.id,
@@ -68,7 +92,7 @@ export class Task {
       text: this.text,
       path: this.path,
       orphaned: this.orphaned,
-      created: moment().format()
+      created: this.created
     }
   }
 
@@ -103,21 +127,18 @@ export class Task {
     const parsed = parseMarkdownTaskString(originalLine, this.tasks.plugin.settings.taskBlockPrefix)
     if (!parsed) {
       // Not able to find a task in this line
-      return this
+      return this.initResult()
     }
 
     // Check if this ID has already been used on this page (duplicate ID)
     if (parsed.id && blacklistIds.includes(parsed.id)) parsed.id = 0
 
     const record = Object.assign({}, DEFAULT_ROW)
-    record.created = moment().format()
 
-    // Get task from DB
-    if (parsed.id) {
-      // Existing row
-      const existing = this.tasks.db.getRow(parsed.id)
-      if (existing) Object.assign(record, existing)
-    }
+    // Check DB for existing task
+    const existing = this.tasks.db.getRow(parsed.id || 0)
+    if (parsed.id && existing) Object.assign(record, existing)
+
     // Update the record from the parsed data
     Object.assign(record, {
       status: parsed.status,
@@ -125,16 +146,27 @@ export class Task {
       path: cacheUpdate.file.path,
       orphaned: 0
     })
+    if (!record.created) record.created = moment().format()
+    const isUpdated = !existing || Object.keys(record).some(key => record[key] !== existing[key])
+
     const result = this.tasks.db.insertOrUpdate(record)
     if (!result) {
       // Unable to insert data - reset to default data
       // Which will show task.valid() === false
       this.reset()
-      return this
+      return this.initResult()
     } else {
       this.setData(result)
     }
-    return this
+    return this.initResult(isUpdated)
+  }
+
+  initResult (isUpdated = false) {
+    return {
+      task: this,
+      isUpdated,
+      valid: this.valid()
+    }
   }
 
   generateMarkdownTask () {

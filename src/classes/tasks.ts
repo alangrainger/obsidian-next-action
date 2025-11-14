@@ -3,7 +3,7 @@ import DoPlugin from '../main'
 import { type CachedMetadata, debounce, type ListItemCache, TFile } from 'obsidian'
 import { Table } from './table'
 import { DatabaseEvent, dbEvents } from './database-events'
-import { moment } from '../functions'
+import { debug, moment } from '../functions'
 
 export interface CacheUpdate {
   file: TFile,
@@ -28,12 +28,9 @@ export class Tasks {
     }, 5000, true)
   }
 
-  get taskBlockPrefix () {
-    return this.plugin.settings.taskBlockPrefix
-  }
-
   taskLineRegex (id: number) {
-    return new RegExp(`^[ \\t]*- \\[.][^$\n]+\\^${this.taskBlockPrefix}${id}\\s*$`, 'm')
+    const prefix = this.plugin.settings.taskBlockPrefix
+    return new RegExp(`^[ \\t]*- \\[.][^$\n]+\\^${prefix}${id}[ \\t]*$`, 'm')
   }
 
   async processTasksFromCacheUpdate (cacheUpdate: CacheUpdate) {
@@ -42,10 +39,13 @@ export class Tasks {
     console.log('PROCESSING cache update for ' + cacheUpdate.file.path)
 
     const processed: { task: Task, cacheItem: ListItemCache }[] = []
+    const updated: Task[] = []
     for (const item of (cacheUpdate.cache.listItems?.filter(x => x.task) || [])) {
-      const task = new Task(this)
-      task.initFromListItem(item, cacheUpdate, processed.map(x => x.task.id))
-      if (task.valid()) processed.push({ task, cacheItem: item })
+      const res = new Task(this).initFromListItem(item, cacheUpdate, processed.map(x => x.task.id))
+      if (res.valid) {
+        processed.push({ task: res.task, cacheItem: item })
+        if (res.isUpdated) updated.push(res.task)
+      }
     }
 
     // Orphan tasks in the DB which are no longer present in the note
@@ -61,7 +61,7 @@ export class Tasks {
 
     // Update the file markdown contents if needed
     // Modify the original markdown task line if necessary
-    let updatedCount = 0
+    /*let updatedCount = 0
     await this.plugin.app.vault.process(cacheUpdate.file, data => {
       if (cacheUpdate.data === data) {
         // The live file contents is the same as the expected contents from the cache
@@ -89,8 +89,11 @@ export class Tasks {
         })
       }
       return data
-    })
-     dbEvents.emit(DatabaseEvent.TasksExternalChange)
+    })*/
+    debug('updated # ' + updated.length)
+    if (updated.length) {
+      dbEvents.emit(DatabaseEvent.TasksExternalChange)
+    }
   }
 
   getTaskById (id: number) {

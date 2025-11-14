@@ -19,8 +19,9 @@ class DatabaseEventEmitter extends EventEmitter {
     return DatabaseEventEmitter.instance
   }
 
-  emitDatabaseChange<T> (event: DatabaseEvent) {
-    this.emit(event)
+  emit<T> (event: DatabaseEvent) {
+    console.log('Event: ' + event)
+    return super.emit(event)
   }
 }
 

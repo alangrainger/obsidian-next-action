@@ -1,7 +1,7 @@
 <script lang="ts">
   import { slide } from 'svelte/transition'
   import type { State } from '../view-types'
-  import { Task, type TaskRow } from '../../classes/task'
+  import { Task } from '../../classes/task'
   import type DoPlugin from '../../main'
 
   interface Props {
@@ -11,16 +11,11 @@
 
   let { state, plugin }: Props = $props()
 
-  // Update the DB when the task changes
-  $effect(() => {
-    if (state.activeIndex > -1) {
-      updateDb({ ...state.tasks[state.activeIndex] })
-    }
-  })
+  let activeTask = $derived(state.tasks[state.activeIndex])
 
-  const updateDb = (row: TaskRow) => {
+  const updateDb = () => {
     console.log('Updating DB from sidebar')
-    const task = new Task(plugin.tasks).initFromRow(row)
+    const task = new Task(plugin.tasks).initFromRow(activeTask)
     task.update()
   }
 
@@ -35,7 +30,7 @@
         <div class="setting-item" style="display:block;">
             <div class="setting-item-name">Task</div>
             <!--<div class="setting-item-description"></div>-->
-            <input type="text" spellcheck="false" bind:value={state.tasks[state.activeIndex].text}>
+            <input type="text" spellcheck="false" bind:value={state.tasks[state.activeIndex].text} oninput={updateDb}>
             <p>{state.tasks[state.activeIndex].text}</p>
         </div>
     </aside>

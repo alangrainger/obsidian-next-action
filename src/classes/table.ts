@@ -8,7 +8,7 @@ interface BaseRow {
   [key: string]: any
 
   id: number
-  created?: string
+  created: string
 }
 
 interface Data<R> {
@@ -61,7 +61,7 @@ export class Table<R extends BaseRow> {
   }
 
   getRow (id: number) {
-    return this.data.rows.find(row => row.id === id)
+    if (id) return this.data.rows.find(row => row.id === id)
   }
 
   private getAutoincrementId () {

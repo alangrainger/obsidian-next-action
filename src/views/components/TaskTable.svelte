@@ -14,23 +14,21 @@
 
   let {
     plugin
-  }: Props = $props();
+  }: Props = $props()
 
-  let state = $state({
+  let state: State = $state({
     activeIndex: -1,
     tasks: [],
     sidebar: {
       open: true,
       element: undefined
     }
-  } as State)
+  })
 
-  function updateView () {
+  export function updateView () {
     console.log('Updating view')
-    state.tasks = []
-    plugin.tasks.db.rows()
+    state.tasks = plugin.tasks.db.rows()
       .filter(row => !row.orphaned && row.status !== TaskStatus.Complete)
-      .forEach(row => state.tasks.push(row))
   }
 
   function updateCheckbox () {
@@ -39,8 +37,11 @@
   // Update tasks list when tasks DB changes
   dbEvents.on(DatabaseEvent.TasksExternalChange, updateView)
 
-  // Immediately update the tasks list on component mount
-  onMount(updateView)
+  onMount(() => {
+    // I have no idea why, but updateView() would never actually do anything here
+    // unless I put it after a small timeout
+    setTimeout(() => { updateView() }, 200)
+  })
 
   onDestroy(() => {
     dbEvents.off(DatabaseEvent.TasksExternalChange, updateView)
