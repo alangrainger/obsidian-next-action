@@ -1,37 +1,54 @@
 <script lang="ts">
   import NoteLink from './NoteLink.svelte'
-  import Checkbox from './Checkbox.svelte'
   import Sidebar from './Sidebar.svelte'
 
   import { onDestroy, onMount } from 'svelte'
   import type DoPlugin from '../../main'
-  import type { Task } from '../../classes/task'
-  import { TaskChangeEvent } from '../../classes/tasks'
+  import { TaskStatus } from '../../classes/task'
+  import type { State } from '../view-types'
+  import { DatabaseEvent, dbEvents } from '../../classes/database-events'
 
-  export let plugin: DoPlugin
-  let rows: Task[] = []
-  let activeTask: Task
+  interface Props {
+    plugin: DoPlugin;
+  }
+
+  let {
+    plugin
+  }: Props = $props();
+
+  let state = $state({
+    activeIndex: -1,
+    tasks: [],
+    sidebar: {
+      open: true,
+      element: undefined
+    }
+  } as State)
 
   function updateView () {
-    rows = plugin.tasks.getActiveTasks()
+    console.log('Updating view')
+    state.tasks = []
+    plugin.tasks.db.rows()
+      .filter(row => !row.orphaned && row.status !== TaskStatus.Complete)
+      .forEach(row => state.tasks.push(row))
   }
 
   function updateCheckbox () {
   }
 
   // Update tasks list when tasks DB changes
-  addEventListener(TaskChangeEvent, updateView)
+  dbEvents.on(DatabaseEvent.TasksExternalChange, updateView)
 
   // Immediately update the tasks list on component mount
   onMount(updateView)
 
   onDestroy(() => {
-    removeEventListener(TaskChangeEvent, updateView)
+    dbEvents.off(DatabaseEvent.TasksExternalChange, updateView)
   })
 </script>
 
 <div class="gtd-view">
-    <Sidebar task="{activeTask}"></Sidebar>
+    <Sidebar state={state} plugin={plugin}></Sidebar>
     <table class="gtd-table">
         <thead>
         <tr>
@@ -42,10 +59,10 @@
         </tr>
         </thead>
         <tbody>
-        {#each rows as row}
-            <tr on:click="{() => {activeTask = row}}">
+        {#each state.tasks as row}
+            <tr onclick={() => {state.activeIndex = state.tasks.findIndex(x => x.id === row.id)}}>
                 <td class="gtd-table-checkbox">
-                    <Checkbox checked="{row.status === 'x'}" on:update="{(event) => { updateCheckbox(row, event.detail) }}"/>
+                    <!--<Checkbox checked={row.status === 'x'} on:update={(event) => { updateCheckbox(row, event.detail) }}/>-->
                 </td>
                 <td class="gtd-table-task">
                     <div class="gtd-table-clip">
@@ -54,7 +71,7 @@
                 </td>
                 <td class="gtd-table-note">
                     <div class="gtd-table-clip">
-                        <NoteLink app="{plugin.app}" path="{row.path}"/>
+                        <NoteLink app={plugin.app} path={row.path}/>
                     </div>
                 </td>
                 <td>{row.status}</td>

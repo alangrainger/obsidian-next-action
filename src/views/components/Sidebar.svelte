@@ -1,34 +1,42 @@
 <script lang="ts">
   import { slide } from 'svelte/transition'
-  import { Setting, debounce } from 'obsidian'
-  import type { Task } from '../../classes/task'
+  import type { State } from '../view-types'
+  import { Task, type TaskRow } from '../../classes/task'
+  import type DoPlugin from '../../main'
 
-  let sidebarEl: HTMLElement
-  let isOpen = true
-  export let task: Task | undefined
+  interface Props {
+    state: State;
+    plugin: DoPlugin;
+  }
 
-  // TODO: change debounce to timeout after all edits finished
-  const setText = debounce((task: Task, event: Event) => {
-    // Task text is required - cannot be blank
-    const target = event.target as HTMLInputElement
-    if (target.value) {
-      task.text = target.value
-      task.update()
+  let { state, plugin }: Props = $props()
+
+  // Update the DB when the task changes
+  $effect(() => {
+    if (state.activeIndex > -1) {
+      updateDb({ ...state.tasks[state.activeIndex] })
     }
-  }, 4000)
+  })
 
-  const toggleSidebar = () => isOpen = !isOpen
+  const updateDb = (row: TaskRow) => {
+    console.log('Updating DB from sidebar')
+    const task = new Task(plugin.tasks).initFromRow(row)
+    task.update()
+  }
+
+  const toggleSidebar = () => state.sidebar.open = !state.sidebar.open
 </script>
 
-<button on:click={toggleSidebar}>Toggle Sidebar</button>
+<button onclick={toggleSidebar}>Toggle Sidebar</button>
 
-{#if isOpen && task}
-    <aside bind:this={sidebarEl} transition:slide={{ duration: 300, axis: 'x' }} class="gtd-sidebar">
+{#if state.sidebar.open && state.activeIndex > -1}
+    <aside bind:this={state.sidebar.element} transition:slide={{ duration: 300, axis: 'x' }} class="gtd-sidebar">
         <!-- Sidebar content -->
         <div class="setting-item" style="display:block;">
             <div class="setting-item-name">Task</div>
             <!--<div class="setting-item-description"></div>-->
-            <input type="text" spellcheck="false" value="{task.text}" on:input={(event) => { setText(task, event) }}>
+            <input type="text" spellcheck="false" bind:value={state.tasks[state.activeIndex].text}>
+            <p>{state.tasks[state.activeIndex].text}</p>
         </div>
     </aside>
 {/if}

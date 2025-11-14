@@ -1,5 +1,6 @@
-import { type ListItemCache, moment, TFile } from 'obsidian'
+import { type ListItemCache } from 'obsidian'
 import { type CacheUpdate, Tasks } from './tasks'
+import { moment } from '../functions'
 
 export enum TaskStatus {
   Todo = ' ',
@@ -42,11 +43,11 @@ interface MarkdownTaskElements {
 export class Task {
   tasks: Tasks
 
-  id: number
-  status: string
-  text: string
-  path: string
-  orphaned: number
+  id = 0
+  status = ' '
+  text = ''
+  path = ''
+  orphaned = 0
 
   constructor (tasks: Tasks) {
     this.tasks = tasks
@@ -83,14 +84,16 @@ export class Task {
   initFromId (id: number) {
     const row = this.tasks.db.getRow(id)
     if (row) {
-      this.initFromDb(row)
+      this.initFromRow(row)
     } else {
       this.reset()
     }
+    return this
   }
 
-  initFromDb (row: TaskRow) {
+  initFromRow (row: TaskRow) {
     this.setData(row)
+    return this
   }
 
   initFromListItem (item: ListItemCache, cacheUpdate: CacheUpdate, blacklistIds: number[]) {
@@ -100,7 +103,7 @@ export class Task {
     const parsed = parseMarkdownTaskString(originalLine, this.tasks.plugin.settings.taskBlockPrefix)
     if (!parsed) {
       // Not able to find a task in this line
-      return
+      return this
     }
 
     // Check if this ID has already been used on this page (duplicate ID)
@@ -127,10 +130,11 @@ export class Task {
       // Unable to insert data - reset to default data
       // Which will show task.valid() === false
       this.reset()
-      return
+      return this
     } else {
       this.setData(result)
     }
+    return this
   }
 
   generateMarkdownTask () {
@@ -150,14 +154,10 @@ export class Task {
       console.log('Unable to update task ' + this.text + ' as there is no ID or path for it')
       return
     }
+    // Update the DB with the new data
     this.tasks.db.update(this.getData())
-    const tfile = this.tasks.plugin.app.vault.getAbstractFileByPath(this.path)
-    if (tfile instanceof TFile) {
-      await this.tasks.plugin.app.vault.process(tfile, data => {
-        console.log('task update()')
-        return data.replace(new RegExp(`^[ \\t]*- \\[.][^$\n]+\\^${this.tasks.plugin.settings.taskBlockPrefix}\\d+\\s*$`, 'm'), this.generateMarkdownTask())
-      })
-    }
+    // Queue the task for update in the original markdown note
+    this.tasks.addTaskToUpdateQueue(this.id)
   }
 }
 

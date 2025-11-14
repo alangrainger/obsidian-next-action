@@ -1,5 +1,6 @@
-import { App, debounce, moment } from 'obsidian'
+import { App, debounce } from 'obsidian'
 import { TaskChangeEvent } from './tasks'
+import { moment } from '../functions'
 
 const PLUGIN_ID = require('../../manifest.json').id
 
@@ -19,7 +20,6 @@ export class Table<R extends BaseRow> {
   app: App
   name: string
   dataChanged: Event
-  saveTimer: NodeJS.Timeout
   initialised = false
 
   /**

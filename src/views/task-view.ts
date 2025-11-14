@@ -1,12 +1,13 @@
 import { ItemView, WorkspaceLeaf } from 'obsidian'
 import Table from './components/TaskTable.svelte'
 import type GtdPlugin from '../main'
+import { mount } from 'svelte'
 
 export const GTD_VIEW_TYPE = 'gtd-view'
 
 export class GtdView extends ItemView {
   plugin: GtdPlugin
-  table?: Table
+  table?: ReturnType<typeof Table>
 
   constructor (leaf: WorkspaceLeaf, plugin: GtdPlugin) {
     super(leaf)
@@ -22,7 +23,7 @@ export class GtdView extends ItemView {
   }
 
   async onOpen () {
-    this.table = new Table({
+    this.table = mount(Table, {
       target: this.contentEl,
       props: {
         plugin: this.plugin
@@ -30,11 +31,11 @@ export class GtdView extends ItemView {
     })
   }
 
-  update () {
+  /*update () {
     this.table?.update()
   }
 
   async onClose () {
     this.table?.$destroy()
-  }
+  }*/
 }
