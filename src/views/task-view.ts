@@ -1,4 +1,4 @@
-import { ItemView, Scope, WorkspaceLeaf } from 'obsidian'
+import { ItemView, WorkspaceLeaf } from 'obsidian'
 import Table from './components/TaskTable.svelte'
 import type DoTaskPlugin from '../main'
 import { mount, unmount } from 'svelte'
