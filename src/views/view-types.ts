@@ -1,10 +1,13 @@
 import type { Task } from '../classes/task.svelte'
 
 export interface State {
-  activeId: number;
+  activeIndex: number;
   tasks: Task[];
   sidebar: {
     open: boolean;
-    element?: HTMLElement;
+    fields: {
+      text: HTMLInputElement;
+    }
   }
+  viewIsActive: boolean;
 }

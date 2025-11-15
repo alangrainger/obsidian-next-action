@@ -27,6 +27,9 @@
 .gtd-table tbody tr:hover {
     background-color: var(--interactive-hover);
 }
+.do-task-active-row {
+    background-color: var(--background-modifier-active-hover);
+}
 .gtd-table-checkbox {
     width: 10px;
 }

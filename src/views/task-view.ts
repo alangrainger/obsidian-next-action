@@ -1,53 +1,61 @@
 import { ItemView, Scope, WorkspaceLeaf } from 'obsidian'
 import Table from './components/TaskTable.svelte'
-import type GtdPlugin from '../main'
+import type DoTaskPlugin from '../main'
 import { mount, unmount } from 'svelte'
+import { KeymapScope } from '../classes/keymap-scope'
 
-export const GTD_VIEW_TYPE = 'gtd-view'
+export const DO_TASK_VIEW_TYPE = 'gtd-view'
 
-export class GtdView extends ItemView {
-  plugin: GtdPlugin
+export interface TaskScopes {
+  tasklist: KeymapScope
+  sidebar: KeymapScope
+  tasklistAndSidebar: KeymapScope
+  [key: string]: KeymapScope
+}
+
+export class DoTaskView extends ItemView {
+  plugin: DoTaskPlugin
   table?: ReturnType<typeof Table>
-  scopeActive = false
+  scopes: TaskScopes
 
-  constructor (leaf: WorkspaceLeaf, plugin: GtdPlugin) {
+  constructor (leaf: WorkspaceLeaf, plugin: DoTaskPlugin) {
     super(leaf)
     this.plugin = plugin
-    this.scope = new Scope(this.app.scope)
-    this.scope.register([], 'Escape', (_: KeyboardEvent) => {
-      console.log('Escape pressed by scope')
-      return false // Return false to preventDefault automatically
-    })
+    const tasklistAndSidebar = new KeymapScope(plugin, plugin.app.scope)
+    this.scopes = {
+      tasklistAndSidebar,
+      tasklist: new KeymapScope(plugin, tasklistAndSidebar.scope),
+      sidebar: new KeymapScope(plugin, tasklistAndSidebar.scope)
+    }
   }
 
   getViewType () {
-    return GTD_VIEW_TYPE
+    return DO_TASK_VIEW_TYPE
   }
 
   getDisplayText () {
     return 'GTD view'
   }
 
-  enableScope () {
-    if (!this.scopeActive && this.scope) this.app.keymap.pushScope(this.scope)
-  }
-
-  disableScope () {
-    if (this.scope) this.app.keymap.popScope(this.scope)
-  }
-
   async onOpen () {
     this.table = mount(Table, {
       target: this.contentEl,
       props: {
-        plugin: this.plugin
+        view: this,
+        plugin: this.plugin,
+        scopes: this.scopes
       }
     })
+    this.table.setActive(true)
   }
 
   async onClose () {
     console.log('unmounting')
-    this.disableScope()
+    this.disableAllScopes()
     return unmount(Table)
+  }
+
+  disableAllScopes () {
+    Object.keys(this.scopes).forEach(scope => this.scopes[scope].disable())
   }
 }

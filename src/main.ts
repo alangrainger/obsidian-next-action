@@ -1,13 +1,13 @@
 import { Plugin, type WorkspaceLeaf } from 'obsidian'
 import { DEFAULT_SETTINGS, type DoPluginSettings, DoSettingTab } from './settings'
 import { Tasks } from './classes/tasks'
-import { GTD_VIEW_TYPE, GtdView } from './views/task-view'
+import { DO_TASK_VIEW_TYPE, DoTaskView } from './views/task-view'
 
 export default class DoPlugin extends Plugin {
   tasks!: Tasks
   settings!: DoPluginSettings
   updateTimer: { [key: string]: NodeJS.Timeout } = {}
-  view!: GtdView
+  view!: DoTaskView
 
   async onload () {
     // Settings
@@ -18,9 +18,9 @@ export default class DoPlugin extends Plugin {
     this.tasks = new Tasks(this)
 
     this.registerView(
-      GTD_VIEW_TYPE,
+      DO_TASK_VIEW_TYPE,
       leaf => {
-        this.view = new GtdView(leaf, this)
+        this.view = new DoTaskView(leaf, this)
         return this.view
       }
     )
@@ -39,11 +39,12 @@ export default class DoPlugin extends Plugin {
 
     // Update the tasks table when user switches to that view
     this.registerEvent(this.app.workspace.on('active-leaf-change', (leaf) => {
-      if (leaf?.view instanceof GtdView) {
-        this.view.table?.refresh() // refresh task list
-        this.view.enableScope()
+      if (leaf?.view instanceof DoTaskView) {
+        this.view?.table?.setActive(true)
+        // this.view.enableScope()
       } else {
-        this.view.disableScope()
+        this.view?.table?.setActive(false)
+        // this.view.disableScope()
       }
     }))
   }
@@ -65,7 +66,7 @@ export default class DoPlugin extends Plugin {
 
     let leaf: WorkspaceLeaf | null
 
-    const leaves = workspace.getLeavesOfType(GTD_VIEW_TYPE)
+    const leaves = workspace.getLeavesOfType(DO_TASK_VIEW_TYPE)
     if (leaves.length > 0) {
       // A leaf with our view already exists, use that
       leaf = leaves[0]
@@ -73,7 +74,7 @@ export default class DoPlugin extends Plugin {
       // Our view could not be found in the workspace, create a new leaf
       leaf = workspace.getLeaf(true)
       await leaf?.setViewState({
-        type: GTD_VIEW_TYPE,
+        type: DO_TASK_VIEW_TYPE,
         active: true
       })
     }

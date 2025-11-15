@@ -3,28 +3,69 @@
   import Sidebar from './Sidebar.svelte'
   import Checkbox from './Checkbox.svelte'
 
-  import { onDestroy, onMount } from 'svelte'
+  import { onDestroy, onMount, tick } from 'svelte'
   import type DoPlugin from '../../main'
   import type { State } from '../view-types'
   import { DatabaseEvent, dbEvents } from '../../classes/database-events'
-  import type { Task } from '../../classes/task.svelte'
   import {moment} from '../../functions'
+  import { DoTaskView, type TaskScopes } from '../task-view'
 
   interface Props {
-    plugin: DoPlugin;
+    view: DoTaskView
+    plugin: DoPlugin
+    scopes: TaskScopes
   }
 
   let {
-    plugin
+    view,
+    plugin,
+    scopes
   }: Props = $props()
 
   let state: State = $state({
-    activeId: 0,
+    activeIndex: 0,
     tasks: [],
     sidebar: {
-      open: true,
-      element: undefined
+      open: false,
+      fields: {
+        text: null
+      }
+    },
+    viewIsActive: false
+  })
+
+  $effect(() => {
+    if (state.viewIsActive) {
+      console.log('view is active')
+      scopes.tasklist.enable()
+      refresh() // Refresh the task list when the view becomes active
+    } else {
+      console.log('view is NOT active')
+      view.disableAllScopes()
     }
+  })
+
+  async function openActiveRow () {
+    state.sidebar.open = true
+    await tick()
+    state.sidebar.fields.text.focus()
+  }
+
+  // Register hotkeys that apply to both tasklist and sidebar views
+  scopes.tasklistAndSidebar.registerHotkey([], 'Escape', () => {
+    state.sidebar.open = false
+  })
+  scopes.tasklistAndSidebar.registerHotkey([], 'ArrowUp', () => {
+    state.activeIndex = Math.max(state.activeIndex - 1, 0)
+  })
+  scopes.tasklistAndSidebar.registerHotkey([], 'ArrowDown', () => {
+    state.activeIndex = Math.min(state.activeIndex + 1, state.tasks.length - 1)
+  })
+
+  // Hotkeys for tasklist only
+  scopes.tasklist.registerHotkey([], 'Enter', openActiveRow)
+  scopes.tasklist.registerHotkey([], ' ', () => {
+    state.tasks[state.activeIndex].toggle()
   })
 
   /**
@@ -35,13 +76,16 @@
     state.tasks = plugin.tasks.getActiveTasks()
   }
 
-  function toggleSidebar (selectedTask: Task) {
-    if (state.activeId === selectedTask.id && state.sidebar.open) {
+  export function setActive (isActive: boolean) {
+    state.viewIsActive = isActive
+  }
+
+  function clickRow (index: number) {
+    if (state.activeIndex === index && state.sidebar.open) {
       state.sidebar.open = false
-      state.activeId = 0
     } else {
-      state.sidebar.open = true
-      state.activeId = selectedTask.id
+      state.activeIndex = index
+      openActiveRow()
     }
   }
 
@@ -56,11 +100,12 @@
 
   onDestroy(() => {
     dbEvents.off(DatabaseEvent.TasksExternalChange, refresh)
+    view.disableAllScopes()
   })
 </script>
 
 <div class="gtd-view">
-    <Sidebar {state}/>
+    <Sidebar {state} {scopes}/>
     <table class="gtd-table">
         <thead>
         <tr>
@@ -71,8 +116,8 @@
         </tr>
         </thead>
         <tbody>
-        {#each state.tasks as task}
-            <tr onclick={() => toggleSidebar(task)}>
+        {#each state.tasks as task, index}
+            <tr onclick={() => clickRow(index)} class:do-task-active-row={index === state.activeIndex}>
                 <td class="gtd-table-checkbox">
                     <Checkbox {task}/>
                 </td>
