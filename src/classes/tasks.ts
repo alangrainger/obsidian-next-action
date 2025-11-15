@@ -104,7 +104,7 @@ export class Tasks {
 
   getActiveTasks () {
     return this.db.rows()
-      .filter(row => !row.orphaned && row.status !== TaskStatus.Complete)
+      .filter(row => !row.orphaned && row.status !== TaskStatus.DONE)
       .map(row => {
         const task = new Task(this)
         task.initFromRow(row)

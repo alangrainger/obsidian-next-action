@@ -27,8 +27,11 @@
     }
   })
 
-  export function updateView () {
-    console.log('Updating view')
+  /**
+   * Refresh the list of tasks
+   */
+  export function refresh () {
+    console.log('Refresh task list')
     state.tasks = plugin.tasks.getActiveTasks()
   }
 
@@ -42,32 +45,21 @@
     }
   }
 
-  function backgroundClick (event: any) {
-    if (event.target === event.currentTarget) {
-      state.sidebar.open = false
-    }
-  }
-
   // Update tasks list when tasks DB changes
-  dbEvents.on(DatabaseEvent.TasksExternalChange, updateView)
+  dbEvents.on(DatabaseEvent.TasksExternalChange, refresh)
 
   onMount(() => {
-    // I have no idea why, but updateView() would never actually do anything here
+    // I have no idea why, but refresh() would never actually do anything here
     // unless I put it after a small timeout
-    setTimeout(() => { updateView() }, 200)
+    setTimeout(() => { refresh() }, 200)
   })
 
   onDestroy(() => {
-    dbEvents.off(DatabaseEvent.TasksExternalChange, updateView)
+    dbEvents.off(DatabaseEvent.TasksExternalChange, refresh)
   })
 </script>
 
-<div class="gtd-view"
-     onclick={backgroundClick}
-     onkeydown={backgroundClick}
-     role="dialog"
-     tabindex="-1"
->
+<div class="gtd-view">
     <Sidebar {state}/>
     <table class="gtd-table">
         <thead>

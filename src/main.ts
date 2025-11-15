@@ -7,6 +7,7 @@ export default class DoPlugin extends Plugin {
   tasks!: Tasks
   settings!: DoPluginSettings
   updateTimer: { [key: string]: NodeJS.Timeout } = {}
+  view!: GtdView
 
   async onload () {
     // Settings
@@ -18,7 +19,10 @@ export default class DoPlugin extends Plugin {
 
     this.registerView(
       GTD_VIEW_TYPE,
-      leaf => new GtdView(leaf, this)
+      leaf => {
+        this.view = new GtdView(leaf, this)
+        return this.view
+      }
     )
     this.addRibbonIcon('dice', 'Activate view', () => {
       this.activateView()
@@ -36,13 +40,16 @@ export default class DoPlugin extends Plugin {
     // Update the tasks table when user switches to that view
     this.registerEvent(this.app.workspace.on('active-leaf-change', (leaf) => {
       if (leaf?.view instanceof GtdView) {
-        leaf.view.update()
+        this.view.table?.refresh() // refresh task list
+        this.view.enableScope()
+      } else {
+        this.view.disableScope()
       }
     }))
   }
 
   onunload () {
-
+    this.view?.close().then()
   }
 
   async loadSettings () {

@@ -3,14 +3,22 @@ import { type CacheUpdate, Tasks } from './tasks'
 import { moment } from '../functions'
 
 export enum TaskStatus {
-  Todo = ' ',
-  Complete = 'x'
+  TODO = ' ',
+  DONE = 'x'
+}
+
+export enum TaskType {
+  INBOX = 'inbox',
+  NEXT_ACTION  = 'next-action',
+  PROJECT = 'project',
+  WAITING_ON = 'waiting-on',
+  SOMEDAY = 'someday'
 }
 
 export enum TaskEmoji {
-  Due = '📅',
-  Created = '➕',
-  Scheduled = '⏳'
+  DUE = '📅',
+  CREATED = '➕',
+  SCHEDULED = '⏳'
 }
 
 export interface TaskRow {
@@ -81,7 +89,7 @@ export class Task {
   }
 
   completed () {
-    return this.status === TaskStatus.Complete
+    return this.status === TaskStatus.DONE
   }
 
   initFromId (id: number) {
@@ -149,7 +157,7 @@ export class Task {
   }
 
   toggle () {
-    this.status = this.status === TaskStatus.Complete ? TaskStatus.Todo : TaskStatus.Complete
+    this.status = this.status === TaskStatus.DONE ? TaskStatus.TODO : TaskStatus.DONE
   }
 
   generateMarkdownTask () {

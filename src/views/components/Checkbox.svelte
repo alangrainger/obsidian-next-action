@@ -14,4 +14,4 @@
   }
 </script>
 
-<input type="checkbox" checked={task.status === TaskStatus.Complete} onclick={toggle} class="task-list-item-checkbox">
+<input type="checkbox" checked={task.status === TaskStatus.DONE} onclick={toggle} class="task-list-item-checkbox">
