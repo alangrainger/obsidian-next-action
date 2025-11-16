@@ -7,8 +7,9 @@
   import type DoPlugin from '../../main'
   import type { State } from '../view-types'
   import { DatabaseEvent, dbEvents } from '../../classes/database-events'
-  import {moment} from '../../functions'
+  import { moment } from '../../functions'
   import { DoTaskView, type TaskScopes } from '../task-view'
+  import { TaskEmoji, TaskType } from '../../classes/task.svelte'
 
   interface Props {
     view: DoTaskView
@@ -34,6 +35,8 @@
     viewIsActive: false
   })
 
+  let activeTask = $derived(state.tasks[state.activeIndex])
+
   $effect(() => {
     if (state.viewIsActive) {
       console.log('view is active')
@@ -51,29 +54,44 @@
     state.sidebar.fields.text.focus()
   }
 
-  // Register hotkeys that apply to both tasklist and sidebar views
-  scopes.tasklistAndSidebar.registerHotkey([], 'Escape', () => {
-    state.sidebar.open = false
-  })
-  scopes.tasklistAndSidebar.registerHotkey([], 'ArrowUp', () => {
-    state.activeIndex = Math.max(state.activeIndex - 1, 0)
-  })
-  scopes.tasklistAndSidebar.registerHotkey([], 'ArrowDown', () => {
-    state.activeIndex = Math.min(state.activeIndex + 1, state.tasks.length - 1)
-  })
+  // Navigate up/down the task list
+  const listUp = () => state.activeIndex = Math.max(state.activeIndex - 1, 0)
+  const listDown = () => state.activeIndex = Math.min(state.activeIndex + 1, state.tasks.length - 1)
+
+  /*
+   * Hotkeys that apply to both tasklist and sidebar views
+   */
+  scopes.tasklistAndSidebar.addHotkeys([
+    ['Escape', [], () => state.sidebar.open = false],
+    ['ArrowUp', [], listUp],
+    ['ArrowDown', [], listDown],
+    ['p', ['Alt'], () => activeTask.setAs(TaskType.PROJECT)],
+    ['n', ['Alt'], () => activeTask.setAs(TaskType.NEXT_ACTION)],
+    ['s', ['Alt'], () => activeTask.setAs(TaskType.SOMEDAY)],
+    ['w', ['Alt'], () => activeTask.setAs(TaskType.WAITING_ON)]
+  ])
 
   // Hotkeys for tasklist only
-  scopes.tasklist.registerHotkey([], 'Enter', openActiveRow)
-  scopes.tasklist.registerHotkey([], ' ', () => {
-    state.tasks[state.activeIndex].toggle()
-  })
+  scopes.tasklist.addHotkeys([
+    ['j', [], listUp],
+    ['k', [], listDown],
+    ['Enter', [], openActiveRow],
+    [' ', [], () => activeTask.toggle()],
+    ['p', [], () => activeTask.setAs(TaskType.PROJECT)],
+    ['n', [], () => activeTask.setAs(TaskType.NEXT_ACTION)],
+    ['s', [], () => activeTask.setAs(TaskType.SOMEDAY)],
+    ['w', [], () => activeTask.setAs(TaskType.WAITING_ON)]
+  ])
 
   /**
    * Refresh the list of tasks
    */
   export function refresh () {
-    console.log('Refresh task list')
-    state.tasks = plugin.tasks.getActiveTasks()
+    console.log('Refreshing task list')
+    state.tasks = plugin.tasks.getTasks(TaskType.INBOX)
+      .concat(plugin.tasks.getTasks(TaskType.NEXT_ACTION))
+      .concat(plugin.tasks.getTasks(TaskType.PROJECT))
+      .concat(plugin.tasks.getTasks(TaskType.SOMEDAY))
   }
 
   export function setActive (isActive: boolean) {
@@ -87,6 +105,10 @@
       state.activeIndex = index
       openActiveRow()
     }
+  }
+
+  function icon (type: TaskType) {
+    return type === TaskType.INBOX ? TaskEmoji.INBOX : ''
   }
 
   // Update tasks list when tasks DB changes
@@ -110,6 +132,7 @@
         <thead>
         <tr>
             <th></th>
+            <th></th>
             <th>Task</th>
             <th>Note</th>
             <th>Created</th>
@@ -117,10 +140,15 @@
         </thead>
         <tbody>
         {#each state.tasks as task, index}
-            <tr onclick={() => clickRow(index)} class:do-task-active-row={index === state.activeIndex}>
+            <tr
+                    onclick={() => clickRow(index)}
+                    class:do-task-inbox-row={(!task.type || task.type === TaskType.INBOX) && index !== state.activeIndex}
+                    class:do-task-active-row={index === state.activeIndex}
+            >
                 <td class="gtd-table-checkbox">
                     <Checkbox {task}/>
                 </td>
+                <td style="width:1.8em">{icon(task.type)}</td>
                 <td class="gtd-table-task">
                     <div class="gtd-table-clip">
                         {task.text}

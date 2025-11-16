@@ -16,6 +16,7 @@
 }
 .gtd-table td {
     padding: 4px;
+    vertical-align: middle;
 }
 .gtd-table input {
     vertical-align: middle;
@@ -29,6 +30,9 @@
 }
 .do-task-active-row {
     background-color: var(--background-modifier-active-hover);
+}
+.do-task-inbox-row {
+    background-color: var(--background-modifier-error);
 }
 .gtd-table-checkbox {
     width: 10px;

@@ -1,4 +1,4 @@
-import { type ListItemCache } from 'obsidian'
+import { type ListItemCache, Notice } from 'obsidian'
 import { type CacheUpdate, Tasks } from './tasks'
 import { moment } from '../functions'
 
@@ -9,30 +9,40 @@ export enum TaskStatus {
 
 export enum TaskType {
   INBOX = 'inbox',
-  NEXT_ACTION  = 'next-action',
+  NEXT_ACTION = 'next-action',
   PROJECT = 'project',
   WAITING_ON = 'waiting-on',
-  SOMEDAY = 'someday'
+  SOMEDAY = 'someday',
+  DEPENDENT = 'dependent' // A task in a project sequence, which is waiting on the previous task to be completed
 }
 
 export enum TaskEmoji {
   DUE = '📅',
   CREATED = '➕',
-  SCHEDULED = '⏳'
+  SCHEDULED = '⏳',
+  PROJECT = '🗃️',
+  INBOX = '📥',
+  SOMEDAY = '💤'
+}
+
+export enum TaskTags {
+  PROJECT = '#project',
+  SOMEDAY = '#someday'
 }
 
 export interface TaskRow {
   [key: string]: any
 
-  id: number,
-  status: string,
-  text: string,
-  path: string,
+  id: number
+  status: string
+  text: string
+  path: string
   /**
    * If the task is not present in any note
    */
-  orphaned: number,
+  orphaned: number
   created: string
+  type: TaskType
 }
 
 const DEFAULT_ROW: TaskRow = {
@@ -41,13 +51,15 @@ const DEFAULT_ROW: TaskRow = {
   text: '',
   path: '',
   orphaned: 0,
-  created: ''
+  created: '',
+  type: TaskType.INBOX
 }
 
 interface MarkdownTaskElements {
   id?: number,
   status: string,
-  text: string
+  text: string,
+  type?: TaskType
 }
 
 export class Task {
@@ -59,6 +71,7 @@ export class Task {
   path = ''
   orphaned = 0
   created = ''
+  type = $state(TaskType.INBOX)
 
   constructor (tasks: Tasks) {
     this.tasks = tasks
@@ -79,7 +92,8 @@ export class Task {
       text: this.text,
       path: this.path,
       orphaned: this.orphaned,
-      created: this.created
+      created: this.created,
+      type: this.type
     }
   }
 
@@ -103,7 +117,9 @@ export class Task {
   }
 
   initFromRow (row: TaskRow) {
-    this.setData(row)
+    // Populate any missing data from DEFAULT_ROW
+    const data = Object.assign({}, DEFAULT_ROW, row)
+    this.setData(data)
     return this
   }
 
@@ -131,9 +147,12 @@ export class Task {
       status: parsed.status,
       text: parsed.text,
       path: cacheUpdate.file.path,
-      orphaned: 0
+      orphaned: 0,
+      type: parsed.type || existing?.type || TaskType.INBOX,
+      created: record.created || moment().format()
     })
-    if (!record.created) record.created = moment().format()
+
+    // Are there any changes from the DB record / or is a new record?
     const isUpdated = !existing || Object.keys(record).some(key => record[key] !== existing[key])
 
     const result = this.tasks.db.insertOrUpdate(record)
@@ -161,13 +180,30 @@ export class Task {
     this.update()
   }
 
+  setAs (type: TaskType) {
+    if (type === this.type) return // no change
+
+    new Notice('Changing task type to ' + type)
+    this.type = type
+    this.update()
+  }
+
+  getTypeSignifier () {
+    if (this.type === TaskType.PROJECT) return TaskEmoji.PROJECT
+    if (this.type === TaskType.SOMEDAY) return TaskEmoji.SOMEDAY
+    return ''
+  }
+
   generateMarkdownTask () {
     const parts = [
       `- [${this.status}]`,
+      this.getTypeSignifier(),
       this.text,
       '^' + this.tasks.blockPrefix + this.id
     ]
-    return parts.join(' ')
+    return parts
+      .filter(Boolean)
+      .join(' ')
   }
 
   /**
@@ -178,6 +214,7 @@ export class Task {
       console.log('Unable to update task ' + this.text + ' as there is no ID or path for it')
       return
     }
+
     // Update the DB with the new data
     this.tasks.db.update(this.getData())
     // Queue the task for update in the original markdown note
@@ -191,18 +228,26 @@ export class Task {
  */
 function getAndRemoveMatch (text: string, regex: RegExp): [string | undefined, string] {
   let foundText
-  const match = text.match(regex)
-  if (match) {
-    foundText = match[1]
-    text = text.replace(regex, '')
+  let matching = true
+  // Remove multiple occurrences if they exist
+  while (matching) {
+    const match = text.match(regex)
+    if (match) {
+      foundText = match[1]
+      text = text.replace(regex, ' ')
+    } else {
+      matching = false
+    }
   }
-  return [foundText, text.trim()]
+  return [foundText, text]
 }
 
 /**
  * Parse a markdown task line into its component elements
  */
 function parseMarkdownTaskString (text: string, prefix: string): MarkdownTaskElements | false {
+  let taskType
+
   // Get task ID
   let id
   [id, text] = getAndRemoveMatch(text, new RegExp(`\\^${prefix}(\\d+)\\s*$`))
@@ -212,13 +257,32 @@ function parseMarkdownTaskString (text: string, prefix: string): MarkdownTaskEle
   let status
   [status, text] = getAndRemoveMatch(text, /^\s*-\s+\[(.)]\s+/)
 
+  // Is project?
+  let isProject
+  [isProject, text] = detectEmojiOrTag(text, TaskEmoji.PROJECT, TaskTags.PROJECT)
+  if (isProject) taskType = TaskType.PROJECT
+
+  // Is someday?
+  let isSomeday
+  [isSomeday, text] = detectEmojiOrTag(text, TaskEmoji.SOMEDAY, TaskTags.SOMEDAY)
+  if (isSomeday) taskType = TaskType.SOMEDAY
+
   if (status && text) {
     return {
       id,
       status,
-      text
+      text: text.trim(),
+      type: taskType
     }
   } else {
     return false
   }
+}
+
+function detectEmojiOrTag (text: string, emoji: TaskEmoji, tag: TaskTags): [string | undefined, string] {
+  let hasEmoji
+  [hasEmoji, text] = getAndRemoveMatch(text, new RegExp(`\\s+(${emoji})\\s+`))
+  let hasTag
+  [hasTag, text] = getAndRemoveMatch(text, new RegExp(`\\s+(${tag})\\s+`))
+  return [hasEmoji || hasTag, text]
 }

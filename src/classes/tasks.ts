@@ -1,4 +1,4 @@
-import { Task, type TaskRow, TaskStatus } from './task.svelte'
+import { Task, type TaskRow, TaskStatus, TaskType } from './task.svelte'
 import DoPlugin from '../main'
 import { type CachedMetadata, debounce, type ListItemCache, TFile } from 'obsidian'
 import { Table } from './table'
@@ -106,9 +106,13 @@ export class Tasks {
     return task
   }
 
-  getActiveTasks () {
+  getTasks (type?: TaskType) {
     return this.db.rows()
-      .filter(row => !row.orphaned && row.status !== TaskStatus.DONE)
+      .filter(row => {
+        // Match INBOX type to tasks which have no type set
+        const typeMatch = !type || (type === TaskType.INBOX && !row.type) || row.type === type
+        return typeMatch && !row.orphaned && row.status !== TaskStatus.DONE
+      })
       .map(row => {
         const task = new Task(this)
         task.initFromRow(row)

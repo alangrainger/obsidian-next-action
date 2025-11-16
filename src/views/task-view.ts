@@ -34,7 +34,7 @@ export class DoTaskView extends ItemView {
   }
 
   getDisplayText () {
-    return 'GTD view'
+    return 'Do Tasks view'
   }
 
   async onOpen () {
@@ -55,6 +55,9 @@ export class DoTaskView extends ItemView {
     return unmount(Table)
   }
 
+  /**
+   * Disable all keymap (hotkey) scopes
+   */
   disableAllScopes () {
     Object.keys(this.scopes).forEach(scope => this.scopes[scope].disable())
   }
