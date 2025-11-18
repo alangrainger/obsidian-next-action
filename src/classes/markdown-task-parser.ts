@@ -1,5 +1,8 @@
 import type DoPlugin from '../main'
 import { TaskEmoji, type TaskRow, TaskStatus, TaskType } from './task.svelte'
+import moment from 'moment'
+
+const DATE_FORMAT = 'YYYY-MM-DD'
 
 export interface MarkdownTaskElements extends Partial<TaskRow> {
   text: string
@@ -130,7 +133,29 @@ export class MarkdownTaskParser {
   }
 
   getScheduled () {
-    return this.getAndRemoveMatch(this.regex.scheduled)
+    const match = this.getAndRemoveMatch(this.regex.scheduled)
+    if (match) {
+      // This is the normal ⏳ 2025-01-01 style
+      return match
+    } else if (this.getAndRemoveMatch(/(\$tod(ay|))/)) {
+      // Today
+      return moment().format(DATE_FORMAT)
+    } else if (this.getAndRemoveMatch(/(\$tom(orrow|))/)) {
+      // Tomorrow
+      return moment().add(1, 'day').format(DATE_FORMAT)
+    } else {
+      // The next occurrence of this day - e.g. $tuesday
+      const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+      for (let i = 0; i < days.length; i++) {
+        const match = this.getAndRemoveMatch(new RegExp(`(\\$${days[i]})`))
+        if (match) {
+          const day = moment().day(i)
+          if (day.isSameOrBefore(moment(), 'day')) day.add(7, 'days')
+          return day.format(DATE_FORMAT)
+        }
+      }
+    }
+    return ''
   }
 
   getCompleted () {

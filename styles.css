@@ -43,6 +43,13 @@
 .gtd-table-task {
     max-width: 400px;
 }
+.next-action-table-project {
+    max-width: 100px;
+}
+.done-task-table-due {
+    word-break: keep-all;
+    white-space: nowrap;
+}
 .gtd-table-note {
     max-width: 100px;
 }

@@ -38,6 +38,7 @@
 
   let activeIndex = $derived(state.tasks.findIndex(x => x.id === state.activeId) || 0)
   let activeTask = $derived(state.tasks[activeIndex])
+  let anyProjects = $derived(state.tasks.filter(x => x.parent).length > 0)
   const isWarning = (task: Task) => !task.type || task.type === TaskType.INBOX || task.type === TaskType.PROJECT
 
   $effect(() => {
@@ -150,6 +151,11 @@
     }
   }
 
+  function projectName (task: Task) {
+    const parentTask = plugin.tasks.getTaskById(task.parent)
+    return parentTask?.text || ''
+  }
+
   /**
    * Display an icon in the 2nd column, for specific types only
    */
@@ -198,6 +204,9 @@
             <th></th>
             <th></th>
             <th>Task</th>
+            {#if anyProjects}
+                <th>Project</th>
+            {/if}
             <th>Due</th>
             <th></th>
         </tr>
@@ -219,6 +228,15 @@
                         {@html task.renderedMarkdown}
                     </div>
                 </td>
+                {#if anyProjects}
+                    <td class="next-action-table-project">
+                        <div class="gtd-table-clip">
+                            {#if task.parent}
+                                {projectName(task)}
+                            {/if}
+                        </div>
+                    </td>
+                {/if}
                 <td class="done-task-table-due">
                     {#if task.isDue}
                         <a href="." class="tag">{fromNow(task.isDue)}</a>
