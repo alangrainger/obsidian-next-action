@@ -73,7 +73,7 @@
     ['ArrowUp', [], listUp],
     ['ArrowDown', [], listDown],
     ['p', ['Alt'], () => setTaskType(TaskType.PROJECT)],
-    ['n', ['Alt'], () => setTaskType(TaskType.NEXT_ACTION)],
+    ['a', ['Alt'], () => setTaskType(TaskType.NEXT_ACTION)],
     ['s', ['Alt'], () => setTaskType(TaskType.SOMEDAY)],
     ['w', ['Alt'], () => setTaskType(TaskType.WAITING_ON)]
   ])
@@ -88,10 +88,10 @@
       listDown()
     }],
     ['p', [], () => setTaskType(TaskType.PROJECT)],
-    ['n', [], () => setTaskType(TaskType.NEXT_ACTION)],
+    ['a', [], () => setTaskType(TaskType.NEXT_ACTION)],
     ['s', [], () => setTaskType(TaskType.SOMEDAY)],
     ['w', [], () => setTaskType(TaskType.WAITING_ON)],
-    ['t', [], () => {
+    ['n', [], () => {
       const project = activeTask.type === TaskType.PROJECT ? activeTask : null
       new TaskInputModal(plugin, project, (taskText) => {
         if (!taskText.trim().length) {

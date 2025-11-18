@@ -36,6 +36,12 @@ export default class DoPlugin extends Plugin {
       callback: () => this.tasks.openQuickCapture()
     })
 
+    this.addCommand({
+      id: 'open-tasklist',
+      name: 'Open the Tasklist',
+      callback: () => this.activateView()
+    })
+
     // Archive completed tasks from the active note
     this.addCommand({
       id: 'archive-completed',
