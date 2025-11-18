@@ -115,6 +115,16 @@ export class DoSettingTab extends PluginSettingTab {
 
     containerEl.empty()
 
+    if (!this.plugin.isMaster() && this.settings.masterAppId) {
+      new Setting(containerEl)
+        .setHeading()
+        .setName('This is not the master device!')
+        .setDesc('Changes made by this device will not be saved. To make this device the master, you need to first revoke the current master device.')
+      new Setting(containerEl)
+        .setHeading()
+        .setName('Capture notes')
+    }
+
     new Setting(containerEl)
       .setName('Default task note')
       .setDesc('The note that will be used to store tasks when creating from Quick Add.')
@@ -179,7 +189,7 @@ export class DoSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings()
             this.display()
           }))
-    } else {
+    } else if (this.plugin.isMaster()) {
       new Setting(containerEl)
         .setName('Revoke master device')
         .setDesc('Removes this device as the master device, so you can set a new one.')
