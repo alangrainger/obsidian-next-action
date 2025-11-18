@@ -25,7 +25,7 @@ export default class DoPlugin extends Plugin {
         return this.view
       }
     )
-    this.addRibbonIcon('dice', 'Activate view', () => {
+    this.addRibbonIcon('square-check-big', 'Open Tasklist', () => {
       this.activateView()
     })
 

@@ -128,7 +128,12 @@ export class Tasks {
       .filter(row => {
         // Match INBOX type to tasks which have no type set
         const typeMatch = !type || row.type === type || (type === TaskType.INBOX && !row.type)
-        return typeMatch && !row.orphaned && row.status !== TaskStatus.DONE && row.path
+        return typeMatch &&
+          !row.orphaned &&                  // Not orphaned
+          row.status !== TaskStatus.DONE && // Not completed
+          row.path &&                       // Is associated with a note
+          (!row.scheduled || moment(row.scheduled) // Is not scheduled for the future
+            .isSameOrBefore(moment(), 'day'))
       })
       .map(row => new Task(this).initFromRow(row).task)
       // Sort by created date - oldest task first

@@ -17,6 +17,7 @@ export class NextActionView extends ItemView {
   plugin: DoTaskPlugin
   table?: ReturnType<typeof Table>
   scopes: TaskScopes
+  icon = 'square-check-big'
 
   constructor (leaf: WorkspaceLeaf, plugin: DoTaskPlugin) {
     super(leaf)
