@@ -6,7 +6,7 @@ export interface State {
   sidebar: {
     open: boolean;
     fields: {
-      text: HTMLInputElement;
+      text: HTMLTextAreaElement;
     }
   }
   viewIsActive: boolean;

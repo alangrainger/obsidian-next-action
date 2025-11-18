@@ -73,10 +73,20 @@
     width: 100%;
 }
 
+.gtd-sidebar textarea {
+    width: 100%;
+    height: 10em;
+}
+
 .done-task-table-due {
     text-align: center;
 }
 .done-task-table-due a {
     background-color: #bd5b2c;
     color: white;
+}
+
+.gtd-table-task p {
+    margin-block-start: 0;
+    margin-block-end: 0;
 }

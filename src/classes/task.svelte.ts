@@ -1,4 +1,4 @@
-import { type ListItemCache } from 'obsidian'
+import { Component, type ListItemCache, MarkdownRenderer } from 'obsidian'
 import { type CacheUpdate, type CacheUpdateItem, Tasks } from './tasks'
 import { assignExisting, debug, getTFileFromPath } from '../functions'
 import { MarkdownTaskParser } from './markdown-task-parser'
@@ -74,6 +74,8 @@ export class Task implements TaskRow {
   scheduled = ''
   completed = ''
 
+  renderedMarkdown = $state('')
+  markdownComponent = new Component()
   markdownTaskParser: MarkdownTaskParser
 
   get DEFAULT_DATA (): TaskRow {
@@ -359,8 +361,18 @@ export class Task implements TaskRow {
 
     // Update the DB with the new data
     this.tasks.db.update(this.getData())
+
+    // Render the markdown so it's available
+    this.renderMarkdown().then()
+
     // Queue the task for update in the original markdown note
     this.tasks.addTaskToUpdateQueue(this.id)
+  }
+
+  async renderMarkdown () {
+    const el = document.createElement('div')
+    await MarkdownRenderer.render(this.tasks.app, this.text, el, '', this.markdownComponent)
+    this.renderedMarkdown = el.innerHTML
   }
 
   /**

@@ -28,10 +28,9 @@
         <!-- Sidebar content -->
         <div class="setting-item">
             <div class="setting-item-name">Task</div>
-            <!--<div class="setting-item-description"></div>-->
-            <input bind:this={state.sidebar.fields.text} type="text" spellcheck="false"
-                   bind:value={activeTask.text}
-                   oninput={() => activeTask.update()}>
+            <textarea bind:this={state.sidebar.fields.text} spellcheck="false"
+                      bind:value={activeTask.text}
+                      oninput={() => activeTask.update()}></textarea>
         </div>
         <div class="setting-item">
             <div class="setting-item-name">Scheduled</div>

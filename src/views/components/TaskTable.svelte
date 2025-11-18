@@ -49,6 +49,11 @@
     }
   })
 
+  // Watch for changes to the active task's text, and re-render the HTML/markdown
+  $effect(() => {
+    if (activeTask?.text) activeTask.renderMarkdown().then()
+  })
+
   async function openActiveRow () {
     state.sidebar.open = true
     await tick()
@@ -110,9 +115,11 @@
   /**
    * Refresh the list of tasks
    */
-  export function refresh () {
+  export async function refresh () {
     debug('Refreshing task list')
-    state.tasks = plugin.tasks.getTasklist()
+    const tasks = plugin.tasks.getTasklist()
+    await Promise.all(tasks.map(async task => await task.renderMarkdown()))
+    state.tasks = tasks
   }
 
   function setTaskType (type: TaskType) {
@@ -128,11 +135,17 @@
     state.viewIsActive = isActive
   }
 
-  function clickRow (id: number) {
-    if (state.activeId === id) {
-      state.sidebar.open = !state.sidebar.open
+  function clickRow (id: number, event: MouseEvent) {
+    if (event.target.closest('a')) {
+      if (event.target.href.startsWith('app')) {
+        plugin.app.workspace.openLinkText(event.target.innerText, '')
+      }
     } else {
-      state.activeId = id
+      if (state.activeId === id) {
+        state.sidebar.open = !state.sidebar.open
+      } else {
+        state.activeId = id
+      }
     }
   }
 
@@ -191,7 +204,7 @@
         <tbody>
         {#each state.tasks as task}
             <tr
-                    onclick={() => clickRow(task.id)}
+                    onclick={event => clickRow(task.id, event)}
                     class:do-task-inbox-row={(isWarning(task)) && task.id !== state.activeId}
                     class:do-task-active-row={task.id === state.activeId}
             >
@@ -200,8 +213,9 @@
                 </td>
                 <td style="width:1.8em">{@html icon(task)}</td>
                 <td class="gtd-table-task">
-                    <div class="gtd-table-clip">
-                        {task.text}
+                    <div class="gtd-table-clip" id="test">
+                        <!--{task.text}-->
+                        {@html task.renderedMarkdown}
                     </div>
                 </td>
                 <td class="done-task-table-due">

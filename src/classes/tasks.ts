@@ -38,6 +38,7 @@ export class Tasks {
     this.db.loadDb().then()
 
     this.debounceQueueUpdate = debounce(() => {
+      debug('Processing debounced queue')
       this.processQueue().then()
     }, 5000, true)
   }

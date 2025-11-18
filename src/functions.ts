@@ -3,12 +3,8 @@ import type { TaskRow } from './classes/task.svelte'
 import moment, { type Moment } from 'moment'
 import { type App, TFile } from 'obsidian'
 
-// Fix for moment Typescript error when imported from Obsidian:
-// "Type typeof moment has no call signatures"
-// export const moment = ((momentModule as any).default || momentModule)
-
 export function debug (...message: any) {
-  if (process.env.NODE_ENV === 'development') console.log(message)
+  if (process.env.NODE_ENV === 'development') console.log(...message)
 }
 
 export function assignExisting (
