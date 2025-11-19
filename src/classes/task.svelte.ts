@@ -242,9 +242,10 @@ export class Task implements TaskRow {
         if (rootParentItem) rootParentItem.hasChanges = true
         // Check the sequence. The first available sub-task should be a Next Action,
         // and the rest should be Dependent
-        record.type = previous.find(prev => ancestors
+        if (previous.find(prev => ancestors
           .map(x => x.id)
-          .includes(prev.task.parent) && !prev.task.isCompleted) ? TaskType.DEPENDENT : TaskType.NEXT_ACTION
+          .includes(prev.task.parent) && !prev.task.isCompleted))
+          record.type =  TaskType.DEPENDENT
       }
     } else {
       // The note is the source-of-truth, so if the task has been re-ordered and there's
@@ -317,9 +318,11 @@ export class Task implements TaskRow {
 
     if (signifiers.includes(this.type)) {
       const key = Object.keys(TaskType).find(key => TaskType[key as keyof typeof TaskType] === this.type) || ''
+      console.log(key)
       if (key === 'WAITING_ON') {
         const displayOptions = this.tasks.plugin.settings.displayOptions
         if (displayOptions.waitingOn === DisplayOption.TAG) {
+          console.log('yes tag')
           return '#' + TaskType.WAITING_ON
         } else if (displayOptions.waitingOn === DisplayOption.EMOJI) {
           return TaskEmoji.WAITING_ON
