@@ -1,6 +1,7 @@
 import { App, DropdownComponent, PluginSettingTab, Setting } from 'obsidian'
 import MyPlugin from './main'
 import { TaskEmoji, type TaskRow } from './classes/task.svelte'
+import { debug } from './functions'
 
 interface TaskElement {
   key: string
@@ -72,6 +73,7 @@ export interface NextActionSettings {
       rows: TaskRow[];
     }
   }
+  debug: boolean;
   [key: string]: any
 }
 
@@ -97,7 +99,8 @@ export const DEFAULT_SETTINGS: NextActionSettings = {
       autoincrement: 1,
       rows: []
     }
-  }
+  },
+  debug: false
 }
 
 export class DoSettingTab extends PluginSettingTab {
@@ -108,6 +111,7 @@ export class DoSettingTab extends PluginSettingTab {
     super(app, plugin)
     this.plugin = plugin
     this.settings = plugin.settings
+    debug.enabled = this.settings.debug
 
     // Set the initial master device
     // If masterAppId is blank but there are existing database rows,
@@ -219,6 +223,17 @@ export class DoSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.taskBlockPrefix)
         .onChange(async (value) => {
           this.plugin.settings.taskBlockPrefix = value || DEFAULT_SETTINGS.taskBlockPrefix
+          await this.plugin.saveSettings()
+        }))
+
+    new Setting(containerEl)
+      .setName('Show debug messages')
+      .setDesc('Enable debug messages in the console.')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.debug)
+        .onChange(async value => {
+          this.plugin.settings.debug = value
+          debug.enabled = value
           await this.plugin.saveSettings()
         }))
   }

@@ -3,9 +3,12 @@ import type { TaskRow } from './classes/task.svelte'
 import moment, { type Moment } from 'moment'
 import { type App, TFile } from 'obsidian'
 
-export function debug (...message: any) {
-  if (process.env.NODE_ENV === 'development') console.log(...message)
-}
+export const debug: { (...message: any[]): void, enabled: boolean } = Object.assign(
+  function (...message: any[]) {
+    if (debug.enabled) console.log(...message)
+  },
+  { enabled: false }
+)
 
 export function assignExisting (
   target: TaskRow,
