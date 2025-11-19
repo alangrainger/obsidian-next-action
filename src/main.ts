@@ -71,34 +71,37 @@ export default class DoPlugin extends Plugin {
       }
     })
 
-    // Queue note for update when metadata cache change detected
-    this.registerEvent(this.app.metadataCache.on('changed', file => this.cacheChangeQueue.add(file.path)))
+    // Queue notes for update when they come into view.
+    // When they go out of view again, that's when we look for any changes.
+    // This is to prevent a race condition where two devices are syncing
+    // and changing a file at the same time. By watching the leaf changes,
+    // I hope that we can identify which device is currently "active" - e.g.
+    // being used by a human.
+    this.registerEvent(this.app.workspace.on('active-leaf-change', leaf => {
+      if (leaf?.view instanceof MarkdownView && leaf.view.file?.path)
+        this.cacheChangeQueue.add(leaf.view.file.path)
+
+      // Notify the view when it is visible
+      this.view?.table?.setActive(leaf?.view instanceof NextActionView)
+    }))
 
     // Process the cache change queue
     this.cacheChangeInterval = setInterval(() => {
-      // Only the master device can make changes this way
-      if (this.isMaster()) {
-        this.cacheChangeQueue.forEach(async (cacheItemPath) => {
-          // Only process the update if the view is no longer active, to prevent
-          // issues with the user and the plugin both changing the data
-          const activeView = this.app.workspace.getActiveViewOfType(MarkdownView)
-          if (!activeView || activeView.file?.path !== cacheItemPath) {
-            const cache = this.app.metadataCache.getCache(cacheItemPath)
-            const file = this.app.vault.getAbstractFileByPath(cacheItemPath)
-            if (cache && file instanceof TFile) {
-              this.cacheChangeQueue.delete(cacheItemPath)
-              const data = await this.app.vault.cachedRead(file)
-              await this.tasks.processTasksFromCacheUpdate({ file, data, cache })
-            }
+      this.cacheChangeQueue.forEach(async (cacheItemPath) => {
+        // Only process the update if the view is no longer active, to prevent
+        // issues with the user and the plugin both changing the data
+        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView)
+        if (!activeView || activeView.file?.path !== cacheItemPath) {
+          const cache = this.app.metadataCache.getCache(cacheItemPath)
+          const file = this.app.vault.getAbstractFileByPath(cacheItemPath)
+          if (cache && file instanceof TFile) {
+            this.cacheChangeQueue.delete(cacheItemPath)
+            const data = await this.app.vault.cachedRead(file)
+            await this.tasks.processTasksFromCacheUpdate({ file, data, cache })
           }
-        })
-      }
+        }
+      })
     }, 2000)
-
-    // Notify the view when it is visible
-    this.registerEvent(this.app.workspace.on('active-leaf-change', (leaf) => {
-      this.view?.table?.setActive(leaf?.view instanceof NextActionView)
-    }))
   }
 
   onunload () {
