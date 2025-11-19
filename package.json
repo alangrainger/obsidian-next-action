@@ -10,7 +10,7 @@
 	},
 	"keywords": [],
 	"author": "Alan Grainger",
-	"license": "MIT",
+	"license": "Unlicense",
 	"dependencies": {
 		"@popperjs/core": "2.11.5"
 	},
