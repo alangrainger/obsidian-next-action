@@ -254,9 +254,9 @@ export class Task implements TaskRow {
           .map(x => x.id)
           .includes(prev.task.parent) && !prev.task.isCompleted)) {
           record.type = TaskType.DEPENDENT
-        } else if (record.type === TaskType.DEPENDENT) {
+        } else if (!record.type || [TaskType.INBOX, TaskType.DEPENDENT].includes(record.type)) {
           // If it's the first task in the sequence, make sure it's not "Dependent".
-          // It might however be SOMEDAY or WAITING_ON etc.
+          // Don't change if it's SOMEDAY or WAITING_ON etc.
           record.type = TaskType.NEXT_ACTION
         }
       }
@@ -426,13 +426,31 @@ export class Task implements TaskRow {
       if (index !== -1) lines.splice(index, 1)
       return lines.join('\n')
     })
+
+    // Get line position based on before/after existing tasks
+    let line = -1
+    const existingId = beforeTask || afterTask
+    if (existingId) {
+      const existingTask = this.tasks.getTaskById(existingId)
+      if (existingTask.path === toPath) {
+        line = beforeTask ? existingTask.line : existingTask.line + 1
+      }
+    }
+
     // Add task to new note
     const newFile = getTFileFromPath(this.app, toPath)
     if (!newFile) return
     await this.app.vault.process(newFile, data => {
-      if (!beforeTask && !afterTask) {
+      if (line >= 0) {
+        // Insert task at the specific position
+        const rows = data.split('\n')
+        rows.splice(line, 0, this.generateMarkdownTask())
+        data = rows.join('\n')
+      } else {
+        // Append task to end of the note
         data = data.trimEnd() + '\n' + this.generateMarkdownTask() + '\n'
       }
+      console.log(data)
       return data
     })
   }
@@ -485,7 +503,7 @@ export class Task implements TaskRow {
    * to a project if not already the case.
    * It will add the subtask at the end of any existing subtasks.
    */
-  async addSubtask (newTaskText: string) {
+  async addSubtask (newTaskText: string, type?: TaskType) {
     // Get the position in the note to insert the new task
     const descendants = this.descendants
     const line = (descendants.length ? descendants[descendants.length - 1].line : this.line) + 1
@@ -496,6 +514,7 @@ export class Task implements TaskRow {
     } as TaskRow).task
     subtask.parent = this.id
     subtask.line = line
+    if (type) subtask.type = type
 
     const tfile = getTFileFromPath(this.tasks.app, this.path)
     if (tfile) {

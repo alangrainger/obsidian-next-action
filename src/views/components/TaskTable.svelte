@@ -94,29 +94,8 @@
     ['s', [], () => setTaskType(TaskType.SOMEDAY)],
     ['w', [], () => setTaskType(TaskType.WAITING_ON)],
     // Move task
-    ['m', [], () => {
-      if (activeTask) new MoveFileModal(plugin, activeTask).open()
-    }],
-    // New task
-    ['n', [], () => {
-      const project = activeTask.type === TaskType.PROJECT ? activeTask : null
-      new TaskInputModal(plugin, project, (taskText) => {
-        if (!taskText.trim().length) {
-          return
-        } else if (project) {
-          // If this is a project line, add the task as a subtask of that project
-          const nextTaskInList = getRowDown()
-          activeTask.addSubtask(taskText).then()
-          // Remove the project from the tasklist since it now has a next action
-          state.tasks.splice(activeIndex, 1)
-          state.activeId = nextTaskInList.id
-        } else {
-          // Otherwise, add the task to the default note
-          const task = new Task(plugin.tasks).initFromText(taskText).task
-          plugin.tasks.addTaskToDefaultNote(task).then()
-        }
-      }).open()
-    }]
+    ['m', [], () => { if (activeTask) new MoveFileModal(plugin, activeTask).open()}],
+    ['n', [], newTask]
   ])
 
   /**
@@ -137,6 +116,26 @@
       state.activeId = getRowDown().id
       refresh()
     }
+  }
+
+  function newTask () {
+    const project = activeTask.type === TaskType.PROJECT ? activeTask : null
+    new TaskInputModal(plugin, project, (taskText) => {
+      if (!taskText.trim().length) {
+        return
+      } else if (project) {
+        // If this is a project line, add the task as a subtask of that project
+        const nextTaskInList = getRowDown()
+        activeTask.addSubtask(taskText).then()
+        // Remove the project from the tasklist since it now has a next action
+        state.tasks.splice(activeIndex, 1)
+        state.activeId = nextTaskInList.id
+      } else {
+        // Otherwise, add the task to the default note
+        const task = new Task(plugin.tasks).initFromText(taskText).task
+        plugin.tasks.addTaskToDefaultNote(task).then()
+      }
+    }).open()
   }
 
   export function setActive (isActive: boolean) {
@@ -167,7 +166,7 @@
 
   function projectName (task: Task) {
     const parentTask = plugin.tasks.getTaskById(task.parent)
-    return parentTask?.text || ''
+    return parentTask?.text ? TaskEmoji.PROJECT + ' ' + parentTask.text : ''
   }
 
   /**

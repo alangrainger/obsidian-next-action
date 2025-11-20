@@ -1,5 +1,6 @@
 import type DoPlugin from '../main'
 import { App, MarkdownView, TFile } from 'obsidian'
+import { debug } from '../functions'
 
 export class UpdateQueue {
   app: App
@@ -21,6 +22,7 @@ export class UpdateQueue {
 
   add (path: string) {
     if (!this.queue.includes(path)) {
+      debug(`📣 Added ${path} to update queue`)
       this.queue.push(path)
       this.plugin.saveSettings().then()
     }
