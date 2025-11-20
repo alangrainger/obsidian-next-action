@@ -4,11 +4,9 @@ import moment from 'moment'
 
 const DATE_FORMAT = 'YYYY-MM-DD'
 
-export interface MarkdownTaskElements extends Partial<TaskRow> {
-  text: string
-}
+export type MarkdownTaskElements = Omit<TaskRow, 'type'>
 
-export interface ParsedMarkdownTask {
+export type ParsedMarkdownTask = {
   parsed: MarkdownTaskElements
   excluded: boolean
 }

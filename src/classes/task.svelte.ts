@@ -236,6 +236,7 @@ export class Task implements TaskRow {
     record.path = cacheUpdate.file.path // In case the task has been moved from another note
 
     // Is this a sub-task?
+    // 'item.parent' is Obsidian returning the line number of the sub-task's parent
     if (item.parent > 0) {
       const parentTask = previous.find(x => x.task.line === item.parent)?.task
       if (parentTask) {
@@ -287,8 +288,8 @@ export class Task implements TaskRow {
    * but will always create a new task as a block ID is not expected here.
    */
   initFromText (text: string) {
-    const parsed = this.markdownTaskParser.processText(text)
-    const record = assignExisting(this.DEFAULT_DATA, parsed)
+    const parsedRes = this.markdownTaskParser.processText(text)
+    const record = assignExisting(this.DEFAULT_DATA, parsedRes.parsed)
     const result = this.tasks.db.insertOrUpdate(record)
     if (!result) {
       // Unable to insert data. Reset to default data, which will show task.valid() === false

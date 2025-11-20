@@ -2,6 +2,7 @@
 import type { TaskRow } from './classes/task.svelte'
 import moment, { type Moment } from 'moment'
 import { type App, TFile } from 'obsidian'
+import type { MarkdownTaskElements } from './classes/markdown-task-parser'
 
 export const debug: { (...message: any[]): void, enabled: boolean } = Object.assign(
   function (...message: any[]) {
@@ -12,7 +13,7 @@ export const debug: { (...message: any[]): void, enabled: boolean } = Object.ass
 
 export function assignExisting (
   target: TaskRow,
-  ...sources: (Partial<TaskRow> | undefined)[]
+  ...sources: (TaskRow | MarkdownTaskElements | undefined)[]
 ): TaskRow {
   for (const source of sources) {
     if (!source) continue
