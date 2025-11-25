@@ -1,4 +1,4 @@
-import type DoPlugin from '../main'
+import type TaskZeroPlugin from '../main'
 import { TaskEmoji, type TaskRow, TaskStatus, TaskType } from './task.svelte'
 import moment from 'moment'
 
@@ -12,11 +12,11 @@ export type ParsedMarkdownTask = {
 }
 
 export class MarkdownTaskParser {
-  plugin: DoPlugin
+  plugin: TaskZeroPlugin
   regex: { [key: string]: RegExp }
   taskLine = ''
 
-  constructor (plugin: DoPlugin) {
+  constructor (plugin: TaskZeroPlugin) {
     this.plugin = plugin
     this.regex = {
       id: new RegExp(`\\^${this.blockPrefix}(\\d+)\\s*$`),

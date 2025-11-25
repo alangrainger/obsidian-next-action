@@ -70,7 +70,7 @@ const tabSettings = [
   }
 ]
 
-export interface NextActionSettings {
+export interface TaskZeroSettings {
   defaultNote: string;
   archiveNote: string;
   taskBlockPrefix: string;
@@ -104,7 +104,7 @@ export interface NextActionSettings {
   [key: string]: any
 }
 
-export const DEFAULT_SETTINGS: NextActionSettings = {
+export const DEFAULT_SETTINGS: TaskZeroSettings = {
   defaultNote: 'Next Action quick add',
   archiveNote: 'Next Action completed tasks',
   taskBlockPrefix: 'na',
@@ -149,7 +149,7 @@ export const DEFAULT_SETTINGS: NextActionSettings = {
 
 export class DoSettingTab extends PluginSettingTab {
   plugin: MyPlugin
-  settings: NextActionSettings
+  settings: TaskZeroSettings
 
   constructor (app: App, plugin: MyPlugin) {
     super(app, plugin)

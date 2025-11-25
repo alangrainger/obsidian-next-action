@@ -4,7 +4,7 @@ import { assignExisting, debug, getTFileFromPath } from '../functions'
 import { MarkdownTaskParser } from './markdown-task-parser'
 import moment from 'moment'
 import { DisplayOption } from '../settings'
-import type DoPlugin from '../main'
+import type TaskZeroPlugin from '../main'
 
 export enum TaskStatus {
   TODO = ' ',
@@ -62,7 +62,7 @@ export class Task implements TaskRow {
 
   tasks: Tasks
   app: App
-  plugin: DoPlugin
+  plugin: TaskZeroPlugin
 
   id = 0
   status = $state(TaskStatus.TODO)

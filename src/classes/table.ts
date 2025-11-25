@@ -2,7 +2,7 @@ import { debounce } from 'obsidian'
 import { TaskChangeEvent } from './tasks'
 import moment from 'moment'
 import { debug } from '../functions'
-import type DoPlugin from '../main'
+import type TaskZeroPlugin from '../main'
 
 export enum Tablename {
   TASKS = 'tasks'
@@ -21,7 +21,7 @@ interface Data<R> {
 }
 
 export class Table<R extends BaseRow> {
-  plugin: DoPlugin
+  plugin: TaskZeroPlugin
   name: string
   data: Data<R>
   dataChanged: Event
@@ -32,7 +32,7 @@ export class Table<R extends BaseRow> {
    */
   saveDb: () => void
 
-  constructor (plugin: DoPlugin, name: Tablename) {
+  constructor (plugin: TaskZeroPlugin, name: Tablename) {
     this.plugin = plugin
     this.name = name
     this.dataChanged = new Event(TaskChangeEvent)

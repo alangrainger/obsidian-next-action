@@ -1,5 +1,5 @@
 import { Task, type TaskRow, TaskStatus, TaskType } from './task.svelte'
-import DoPlugin from '../main'
+import TaskZeroPlugin from '../main'
 import { type App, type CachedMetadata, debounce, type ListItemCache, TFile } from 'obsidian'
 import { Table, Tablename } from './table'
 import { DatabaseEvent, dbEvents } from './database-events'
@@ -24,12 +24,12 @@ export const TaskChangeEvent = 'do:tasks-change'
 export class Tasks {
   readonly tableName = 'tasks'
   app: App
-  plugin: DoPlugin
+  plugin: TaskZeroPlugin
   db: Table<TaskRow>
   private noteUpdateQueue: Set<number> = new Set([])
   private readonly debounceQueueUpdate: () => void
 
-  constructor (plugin: DoPlugin) {
+  constructor (plugin: TaskZeroPlugin) {
     this.plugin = plugin
     this.app = plugin.app
     this.db = new Table<TaskRow>(this.plugin, Tablename.TASKS)

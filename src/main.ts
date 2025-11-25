@@ -1,16 +1,16 @@
 import { MarkdownView, Plugin, TFile, type WorkspaceLeaf } from 'obsidian'
-import { DEFAULT_SETTINGS, type NextActionSettings, DoSettingTab } from './settings'
+import { DEFAULT_SETTINGS, type TaskZeroSettings, DoSettingTab } from './settings'
 import { Tasks } from './classes/tasks'
-import { NEXT_ACTION_VIEW_TYPE, NextActionView } from './views/task-view'
+import { TASK_ZERO_VIEW_TYPE, TaskZeroView } from './views/task-view'
 import { debug, getOrCreateFile } from './functions'
 import { DetectUser } from './classes/detect-user'
 import { UpdateQueue } from './classes/update-queue'
 import { dbEvents } from './classes/database-events'
 
-export default class DoPlugin extends Plugin {
+export default class TaskZeroPlugin extends Plugin {
   tasks!: Tasks
-  settings!: NextActionSettings
-  view!: NextActionView
+  settings!: TaskZeroSettings
+  view!: TaskZeroView
   userActivity!: DetectUser
   updateQueue!: UpdateQueue
 
@@ -24,9 +24,9 @@ export default class DoPlugin extends Plugin {
     this.tasks = new Tasks(this)
 
     this.registerView(
-      NEXT_ACTION_VIEW_TYPE,
+      TASK_ZERO_VIEW_TYPE,
       leaf => {
-        this.view = new NextActionView(leaf, this)
+        this.view = new TaskZeroView(leaf, this)
         return this.view
       }
     )
@@ -115,7 +115,7 @@ export default class DoPlugin extends Plugin {
 
     let leaf: WorkspaceLeaf | null
 
-    const leaves = workspace.getLeavesOfType(NEXT_ACTION_VIEW_TYPE)
+    const leaves = workspace.getLeavesOfType(TASK_ZERO_VIEW_TYPE)
     if (leaves.length > 0) {
       // A leaf with our view already exists, use that
       leaf = leaves[0]
@@ -123,7 +123,7 @@ export default class DoPlugin extends Plugin {
       // Our view could not be found in the workspace, create a new leaf
       leaf = workspace.getLeaf(true)
       await leaf?.setViewState({
-        type: NEXT_ACTION_VIEW_TYPE,
+        type: TASK_ZERO_VIEW_TYPE,
         active: true
       })
     }

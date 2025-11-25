@@ -1,5 +1,5 @@
 import { type Hotkey, Modal, Setting } from 'obsidian'
-import type DoPlugin from '../main'
+import type TaskZeroPlugin from '../main'
 
 export enum HotkeyAction {
   TASKLIST_MOVE_UP = 'tasklist-move-up',
@@ -38,9 +38,9 @@ export const HOTKEY_DESCRIPTIONS: Record<HotkeyAction, string> = {
 }
 
 export class HotkeyModal extends Modal {
-  plugin: DoPlugin
+  plugin: TaskZeroPlugin
 
-  constructor (plugin: DoPlugin) {
+  constructor (plugin: TaskZeroPlugin) {
     super(plugin.app)
     this.plugin = plugin
   }

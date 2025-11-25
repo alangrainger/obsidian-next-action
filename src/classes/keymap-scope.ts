@@ -1,5 +1,5 @@
 import { App, type Modifier, Scope } from 'obsidian'
-import type DoPlugin from '../main'
+import type TaskZeroPlugin from '../main'
 
 type Hotkey = {
   key: string,
@@ -10,11 +10,11 @@ type HotkeyConfig = [Hotkey, callback: () => void]
 
 export class KeymapScope {
   app: App
-  plugin: DoPlugin
+  plugin: TaskZeroPlugin
   scope: Scope
   isActive = false
 
-  constructor (plugin: DoPlugin, parent: Scope) {
+  constructor (plugin: TaskZeroPlugin, parent: Scope) {
     this.plugin = plugin
     this.app = plugin.app
     this.scope = new Scope(parent)

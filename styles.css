@@ -4,63 +4,63 @@
     font-size: 50% !important;
 }
 
-.gtd-view {
+.task-zero-view {
     max-width: 900px;
     margin: 0 auto;
     height: 100%;
 }
 
-.gtd-table {
+.task-zero-table {
     width: 100%;
     border-collapse: collapse;
 }
-.gtd-table td {
+.task-zero-table td {
     padding: 4px;
     vertical-align: middle;
 }
-.gtd-table tr {
+.task-zero-table tr {
     border-bottom: 1px solid var(--background-modifier-border);
 }
-.gtd-table input {
+.task-zero-table input {
     vertical-align: middle;
 }
-.gtd-table input[type=checkbox] {
+.task-zero-table input[type=checkbox] {
     margin: 0;
     margin-inline-end: 0;
 }
 /*.gtd-table tbody tr:hover {
     background-color: var(--interactive-hover);
 }*/
-.do-task-active-row {
+.task-zero-active-row {
     background-color: var(--text-highlight-bg);
 }
-.do-task-inbox-row {
+.task-zero-inbox-row {
     background-color: var(--text-selection);
 }
-.gtd-table-checkbox {
+.task-zero-table-checkbox {
     width: 10px;
 }
-.gtd-table-task {
+.task-zero-table-task {
     max-width: 400px;
 }
-.next-action-table-project {
+.task-zero-table-project {
     max-width: 100px;
 }
-.done-task-table-due {
+.task-zero-table-due {
     word-break: keep-all;
     white-space: nowrap;
 }
-.gtd-table-note {
+.task-zero-table-note {
     max-width: 100px;
 }
 
-.gtd-table-clip {
+.task-zero-table-clip {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.gtd-sidebar {
+.task-zero-sidebar {
     position: fixed;
     z-index: 5;
     top: 0;
@@ -72,42 +72,42 @@
     border-left: solid 1px var(--background-modifier-border);
 }
 
-.gtd-sidebar .setting-item {
+.task-zero-sidebar .setting-item {
     display: block;
 }
-.gtd-sidebar .setting-item-name {
+.task-zero-sidebar .setting-item-name {
     margin: 0.5em 0;
     font-weight: bold;
 }
 
-.gtd-sidebar  input {
+.task-zero-sidebar  input {
     width: 100%;
 }
 
-.gtd-sidebar textarea {
+.task-zero-sidebar textarea {
     width: 100%;
     height: 10em;
 }
 
-.done-task-table-due {
+.task-zero-table-due {
     text-align: center;
 }
-.done-task-table-due a {
+.task-zero-table-due a {
     background-color: #bd5b2c;
     color: white;
 }
 
-.gtd-table-task p {
+.task-zero-table-task p {
     margin-block-start: 0;
     margin-block-end: 0;
 }
 
-.next-action-tab-setting {
+.task-zero-tab-setting {
     border: none;
     padding: 0 0 0.3em 0;
 }
 
-.next-action-task-textarea textarea {
+.task-zero-task-textarea textarea {
     width: 100%;
     height: 5em;
 }

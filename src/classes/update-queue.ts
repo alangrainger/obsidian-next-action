@@ -1,15 +1,15 @@
-import type DoPlugin from '../main'
+import type TaskZeroPlugin from '../main'
 import { App, MarkdownView, TFile } from 'obsidian'
 import { debug } from '../functions'
 
 export class UpdateQueue {
   app: App
-  plugin: DoPlugin
+  plugin: TaskZeroPlugin
   private readonly queue: string[]
   private readonly cacheChangeInterval: NodeJS.Timeout
   private running = false
 
-  constructor (plugin: DoPlugin) {
+  constructor (plugin: TaskZeroPlugin) {
     this.app = plugin.app
     this.plugin = plugin
     this.queue = plugin.settings.database.changeQueue

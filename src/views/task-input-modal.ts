@@ -1,14 +1,14 @@
 import { Modal, Setting } from 'obsidian'
 import { type Task, TaskEmoji } from '../classes/task.svelte'
-import type DoPlugin from '../main'
+import type TaskZeroPlugin from '../main'
 
 export class TaskInputModal extends Modal {
-  plugin: DoPlugin
+  plugin: TaskZeroPlugin
   project: Task | null
   taskText = ''
   callback: (taskText: string) => void
 
-  constructor (plugin: DoPlugin, project: Task | null, callback: (taskText: string) => void) {
+  constructor (plugin: TaskZeroPlugin, project: Task | null, callback: (taskText: string) => void) {
     super(plugin.app)
     this.plugin = plugin
     this.project = project

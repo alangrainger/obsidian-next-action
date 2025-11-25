@@ -1,10 +1,10 @@
 import { ItemView, WorkspaceLeaf } from 'obsidian'
 import Table from './components/TaskTable.svelte'
-import type DoTaskPlugin from '../main'
+import type TaskZeroPlugin from '../main'
 import { mount, unmount } from 'svelte'
 import { KeymapScope } from '../classes/keymap-scope'
 
-export const NEXT_ACTION_VIEW_TYPE = 'next-action-view'
+export const TASK_ZERO_VIEW_TYPE = 'task-zero-view'
 
 export interface TaskScopes {
   tasklist: KeymapScope
@@ -13,13 +13,13 @@ export interface TaskScopes {
   [key: string]: KeymapScope
 }
 
-export class NextActionView extends ItemView {
-  plugin: DoTaskPlugin
+export class TaskZeroView extends ItemView {
+  plugin: TaskZeroPlugin
   table?: ReturnType<typeof Table>
   scopes: TaskScopes
   icon = 'square-check-big'
 
-  constructor (leaf: WorkspaceLeaf, plugin: DoTaskPlugin) {
+  constructor (leaf: WorkspaceLeaf, plugin: TaskZeroPlugin) {
     super(leaf)
     this.plugin = plugin
     const tasklistAndSidebar = new KeymapScope(plugin, plugin.app.scope)
@@ -31,7 +31,7 @@ export class NextActionView extends ItemView {
   }
 
   getViewType () {
-    return NEXT_ACTION_VIEW_TYPE
+    return TASK_ZERO_VIEW_TYPE
   }
 
   getDisplayText () {

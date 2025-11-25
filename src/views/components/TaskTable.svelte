@@ -4,11 +4,11 @@
   import Checkbox from './Checkbox.svelte'
 
   import { onDestroy, onMount, tick } from 'svelte'
-  import type DoPlugin from '../../main'
+  import type TaskZeroPlugin from '../../main'
   import { DefaultTabs, type State, type Tab } from '../view-types'
   import { DatabaseEvent, dbEvents } from '../../classes/database-events'
   import { debug, fromNow } from '../../functions'
-  import { NextActionView, type TaskScopes } from '../task-view'
+  import { TaskZeroView, type TaskScopes } from '../task-view'
   import { Task, TaskEmoji, TaskType } from '../../classes/task.svelte'
   import { TaskInputModal } from '../task-input-modal'
   import { MoveToProjectModal } from '../move-to-project-modal'
@@ -17,8 +17,8 @@
   import { HotkeyAction, HotkeyModal } from '../hotkeys'
 
   interface Props {
-    view: NextActionView
-    plugin: DoPlugin
+    view: TaskZeroView
+    plugin: TaskZeroPlugin
     scopes: TaskScopes
   }
 
@@ -266,14 +266,14 @@
    * Watch for the view to become active and set the reactive state property
    */
   function watchLeafChanges (leaf: WorkspaceLeaf | null) {
-    state.viewIsActive = leaf?.view instanceof NextActionView
+    state.viewIsActive = leaf?.view instanceof TaskZeroView
   }
 </script>
 
-<div class="gtd-view">
+<div class="task-zero-view">
     <Sidebar {activeTask} {state} {scopes} {plugin}/>
     <Tabs {state}/>
-    <table class="gtd-table">
+    <table class="task-zero-table">
         <!--<thead>
         <tr>
             <th></th>
@@ -293,26 +293,26 @@
                     class:do-task-inbox-row={(isWarning(task)) && task.id !== state.activeId}
                     class:do-task-active-row={task.id === state.activeId}
             >
-                <td class="gtd-table-checkbox">
+                <td class="task-zero-table-checkbox">
                     <Checkbox {task}/>
                 </td>
                 <td style="width:1.8em">{@html icon(task)}</td>
-                <td class="gtd-table-task">
-                    <div class="gtd-table-clip" id="test">
+                <td class="task-zero-table-task">
+                    <div class="task-zero-table-clip" id="test">
                         <!--{task.text}-->
                         {@html task.renderedMarkdown}
                     </div>
                 </td>
                 {#if anyProjects}
-                    <td class="next-action-table-project">
-                        <div class="gtd-table-clip">
+                    <td class="task-zero-table-project">
+                        <div class="task-zero-table-clip">
                             {#if task.parent}
                                 {projectName(task)}
                             {/if}
                         </div>
                     </td>
                 {/if}
-                <td class="done-task-table-due">
+                <td class="task-zero-table-due">
                     {#if task.isDue}
                         <a href="." class="tag">{fromNow(task.isDue)}</a>
                     {/if}

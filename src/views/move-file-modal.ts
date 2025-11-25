@@ -1,10 +1,10 @@
 import { Modal, Setting } from 'obsidian'
-import type DoPlugin from '../main'
+import type TaskZeroPlugin from '../main'
 import { FileSuggest } from './suggest/file-suggest'
 import { Task } from '../classes/task.svelte'
 
 export class MoveFileModal extends Modal {
-  plugin: DoPlugin
+  plugin: TaskZeroPlugin
   newPath = ''
   position = ''
   otherTaskId = ''
@@ -14,7 +14,7 @@ export class MoveFileModal extends Modal {
 
   // callback: (taskText: string) => void
 
-  constructor (plugin: DoPlugin, task: Task) {
+  constructor (plugin: TaskZeroPlugin, task: Task) {
     super(plugin.app)
     this.plugin = plugin
     this.task = task

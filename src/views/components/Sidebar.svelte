@@ -3,13 +3,13 @@
   import type { State } from '../view-types'
   import type { TaskScopes } from '../task-view'
   import type { Task } from '../../classes/task.svelte'
-  import type NextActionPlugin from '../../main'
+  import type TaskZeroPlugin from '../../main'
 
   interface Props {
     state: State;
     scopes: TaskScopes;
     activeTask: Task;
-    plugin: NextActionPlugin;
+    plugin: TaskZeroPlugin;
   }
 
   let { state, scopes, activeTask, plugin }: Props = $props()
@@ -33,7 +33,7 @@
 </script>
 
 {#if state.sidebar.open && activeTask}
-    <aside transition:slide={{ duration: 300, axis: 'x' }} class="gtd-sidebar">
+    <aside transition:slide={{ duration: 300, axis: 'x' }} class="task-zero-sidebar">
         {@html activeTask.renderedMarkdown}
         <div class="setting-item">
             <div class="setting-item-name">Task</div>

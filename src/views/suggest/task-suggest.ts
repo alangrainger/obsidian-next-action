@@ -1,9 +1,9 @@
-import DoPlugin from '../../main'
+import TaskZeroPlugin from '../../main'
 import type { Task } from '../../classes/task.svelte'
 import { AbstractInputSuggest } from 'obsidian'
 
 type TaskSuggestProps = {
-  plugin: DoPlugin
+  plugin: TaskZeroPlugin
   inputEl: HTMLInputElement
   filter: (task: Task) => boolean
   sort: (a: Task, b: Task) => number
@@ -15,7 +15,7 @@ type TaskSuggestProps = {
  * inputEl.dataset.taskId
  */
 export class TaskSuggest extends AbstractInputSuggest<Task> {
-  plugin: DoPlugin
+  plugin: TaskZeroPlugin
   tasks: Task[]
   inputEl: HTMLInputElement
   callback: (selectedTask: Task) => any
