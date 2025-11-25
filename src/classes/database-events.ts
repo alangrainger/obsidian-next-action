@@ -11,9 +11,8 @@ class DatabaseEventEmitter {
   private listeners: { event: DatabaseEvent, listener: EventListener }[] = []
 
   private constructor () {
-    Object.values(DatabaseEvent).forEach(event => {
-      this.events[event] = new Event(event)
-    })
+    Object.values(DatabaseEvent)
+      .forEach(event => this.events[event] = new Event(event))
   }
 
   static getInstance (): DatabaseEventEmitter {

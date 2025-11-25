@@ -262,10 +262,6 @@
     plugin.app.workspace.off('active-leaf-change', watchLeafChanges)
   }
 
-  onDestroy(() => {
-    console.log('the component is being destroyed')
-  })
-
   /**
    * Watch for the view to become active and set the reactive state property
    */
