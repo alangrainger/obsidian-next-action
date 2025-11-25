@@ -5,6 +5,7 @@ import { NEXT_ACTION_VIEW_TYPE, NextActionView } from './views/task-view'
 import { debug, getOrCreateFile } from './functions'
 import { DetectUser } from './classes/detect-user'
 import { UpdateQueue } from './classes/update-queue'
+import { dbEvents } from './classes/database-events'
 
 export default class DoPlugin extends Plugin {
   tasks!: Tasks
@@ -83,6 +84,7 @@ export default class DoPlugin extends Plugin {
     this.view?.close().then()
     this.updateQueue.unload()
     this.userActivity.unload()
+    dbEvents.destroy()
   }
 
   async loadSettings () {
