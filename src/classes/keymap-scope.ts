@@ -1,7 +1,12 @@
 import { App, type Modifier, Scope } from 'obsidian'
 import type DoPlugin from '../main'
 
-type HotkeyConfig = [key: string, modifiers: Modifier[], callback: () => void]
+type Hotkey = {
+  key: string,
+  modifiers: Modifier[]
+}
+
+type HotkeyConfig = [Hotkey, callback: () => void]
 
 export class KeymapScope {
   app: App
@@ -29,8 +34,8 @@ export class KeymapScope {
     }
   }
 
-  addHotkey (...[key, modifiers, callback]: HotkeyConfig) {
-    this.scope.register(modifiers, key, _ => {
+  addHotkey (...[hotkey, callback]: HotkeyConfig) {
+    this.scope.register(hotkey.modifiers, hotkey.key, _ => {
       callback()
       // Return false to preventDefault
       return false

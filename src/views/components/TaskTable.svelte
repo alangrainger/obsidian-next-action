@@ -14,6 +14,7 @@
   import { MoveToProjectModal } from '../move-to-project-modal'
   import Tabs from './Tabs.svelte'
   import { WorkspaceLeaf } from 'obsidian'
+  import { HotkeyAction, HotkeyModal } from '../hotkeys'
 
   interface Props {
     view: NextActionView
@@ -77,37 +78,38 @@
   /*
    * Hotkeys that apply to both tasklist and sidebar views
    */
+  const hotkeys = plugin.settings.hotkeys
   scopes.tasklistAndSidebar.addHotkeys([
-    ['Escape', [], () => state.sidebar.open = false],
-    ['ArrowUp', [], listUp],
-    ['ArrowDown', [], listDown],
-    ['p', ['Alt'], () => setTaskType(TaskType.PROJECT)],
-    ['a', ['Alt'], () => setTaskType(TaskType.NEXT_ACTION)],
-    ['s', ['Alt'], () => setTaskType(TaskType.SOMEDAY)],
-    ['w', ['Alt'], () => setTaskType(TaskType.WAITING_ON)]
+    [hotkeys[HotkeyAction.TASKLIST_SIDEBAR_CLOSE], () => state.sidebar.open = false],
+    [hotkeys[HotkeyAction.TASKLIST_MOVE_UP], listUp],
+    [hotkeys[HotkeyAction.TASKLIST_MOVE_DOWN], listDown],
+    // ['p', ['Alt'], () => setTaskType(TaskType.PROJECT)],
+    // ['a', ['Alt'], () => setTaskType(TaskType.NEXT_ACTION)],
+    // ['s', ['Alt'], () => setTaskType(TaskType.SOMEDAY)],
+    // ['w', ['Alt'], () => setTaskType(TaskType.WAITING_ON)]
   ])
 
   // Hotkeys for tasklist only
   scopes.tasklist.addHotkeys([
-    ['j', [], listUp],
-    ['k', [], listDown],
-    ['Enter', [], openActiveRow],
-    [' ', [], () => {
+    [hotkeys[HotkeyAction.TASKLIST_MOVE_UP_ALT], listUp],
+    [hotkeys[HotkeyAction.TASKLIST_MOVE_DOWN_ALT], listDown],
+    [hotkeys[HotkeyAction.TASKLIST_OPEN_ACTIVE_ROW], openActiveRow],
+    [hotkeys[HotkeyAction.TASKLIST_TOGGLE_COMPLETED], () => {
       activeTask.toggle()
       listDown()
     }],
-    ['p', [], () => setTaskType(TaskType.PROJECT)],
-    ['a', [], () => setTaskType(TaskType.NEXT_ACTION)],
-    ['s', [], () => setTaskType(TaskType.SOMEDAY)],
-    ['w', [], () => setTaskType(TaskType.WAITING_ON)],
-    // Move task
-    ['m', [], () => { if (activeTask) new MoveToProjectModal(plugin, activeTask).open() }],
-    ['n', [], newTask]
+    [hotkeys[HotkeyAction.TASK_SET_TYPE_PROJECT], () => setTaskType(TaskType.PROJECT)],
+    [hotkeys[HotkeyAction.TASK_SET_TYPE_NEXT_ACTION], () => setTaskType(TaskType.NEXT_ACTION)],
+    [hotkeys[HotkeyAction.TASK_SET_TYPE_SOMEDAY], () => setTaskType(TaskType.SOMEDAY)],
+    [hotkeys[HotkeyAction.TASK_SET_TYPE_WAITING_ON], () => setTaskType(TaskType.WAITING_ON)],
+    [hotkeys[HotkeyAction.TASKLIST_MOVE_TASK], () => { if (activeTask) new MoveToProjectModal(plugin, activeTask).open() }],
+    [hotkeys[HotkeyAction.TASKLIST_NEW_TASK], newTask],
+    [{ key: '?', modifiers: ['Shift'] }, () => new HotkeyModal(plugin).open()]
   ])
 
   // Add hotkeys for Alt + 1-9 for switching tabs
   Array.from({ length: 9 }, (_, index) => index + 1)
-    .forEach(num => scopes.tasklist.addHotkey(num.toString(), ['Alt'], () => switchTab(num)))
+    .forEach(num => scopes.tasklist.addHotkey({ key: num.toString(), modifiers: ['Alt'] }, () => switchTab(num)))
 
   /**
    * Refresh the tasklist
