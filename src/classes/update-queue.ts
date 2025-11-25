@@ -22,7 +22,7 @@ export class UpdateQueue {
 
   add (path: string) {
     if (!this.queue.includes(path)) {
-      debug(`📣 Added ${path} to update queue`)
+      debug(`Added ${path} to update queue`)
       this.queue.push(path)
       this.plugin.saveSettings().then()
     }

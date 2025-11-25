@@ -1,5 +1,5 @@
 import { App, type Modifier, Scope } from 'obsidian'
-import type TaskZeroPlugin from '../main'
+import TaskZeroPlugin from '../main'
 
 type Hotkey = {
   key: string,

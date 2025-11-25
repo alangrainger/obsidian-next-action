@@ -1,5 +1,5 @@
 import { type Hotkey, Modal, Setting } from 'obsidian'
-import type TaskZeroPlugin from '../main'
+import TaskZeroPlugin from '../main'
 
 export enum HotkeyAction {
   TASKLIST_MOVE_UP = 'tasklist-move-up',

@@ -3,7 +3,7 @@
   import Sidebar from './Sidebar.svelte'
   import Checkbox from './Checkbox.svelte'
 
-  import { onDestroy, onMount, tick } from 'svelte'
+  import { onMount, tick } from 'svelte'
   import type TaskZeroPlugin from '../../main'
   import { DefaultTabs, type State, type Tab } from '../view-types'
   import { DatabaseEvent, dbEvents } from '../../classes/database-events'
@@ -242,8 +242,8 @@
   onMount(() => {
     // Watch for leaf changes to know when the tasklist is visible/active
     plugin.app.workspace.on('active-leaf-change', watchLeafChanges)
-
-    setTimeout(async () => { state.activeId = state.tasks[0]?.id }, 150)
+    state.viewIsActive = plugin.app.workspace.getActiveViewOfType(TaskZeroView) !== null
+    refresh(true)
   })
 
   /**
@@ -290,8 +290,8 @@
         {#each state.tasks as task}
             <tr
                     onclick={event => clickRow(task.id, event)}
-                    class:do-task-inbox-row={(isWarning(task)) && task.id !== state.activeId}
-                    class:do-task-active-row={task.id === state.activeId}
+                    class:task-zero-inbox-row={(isWarning(task)) && task.id !== state.activeId}
+                    class:task-zero-active-row={task.id === state.activeId}
             >
                 <td class="task-zero-table-checkbox">
                     <Checkbox {task}/>

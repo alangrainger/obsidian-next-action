@@ -1,6 +1,6 @@
 import { ItemView, WorkspaceLeaf } from 'obsidian'
 import Table from './components/TaskTable.svelte'
-import type TaskZeroPlugin from '../main'
+import TaskZeroPlugin from '../main'
 import { mount, unmount } from 'svelte'
 import { KeymapScope } from '../classes/keymap-scope'
 
