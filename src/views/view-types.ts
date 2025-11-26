@@ -24,5 +24,6 @@ export interface Tab {
 
 export enum DefaultTabs {
   TASKS = '✅ Tasks',
+  PROJECTS = '🗃️ Projects',
   SOMEDAY = '💤 Someday'
 }

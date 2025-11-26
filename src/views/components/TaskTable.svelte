@@ -45,7 +45,9 @@
   let activeIndex = $derived(state.tasks.findIndex(x => x.id === state.activeId) || 0)
   let activeTask = $derived(state.tasks[activeIndex])
   let anyProjects = $derived(state.tasks.filter(x => x.parent).length > 0)
-  const isWarning = (task: Task) => !task.type || task.type === TaskType.INBOX || task.type === TaskType.PROJECT
+  const isWarning = (task: Task) => !task.type ||
+    task.type === TaskType.INBOX ||
+    task.type === TaskType.PROJECT && !task.activeChildren.length
 
   $effect(() => {
     if (state.viewIsActive) {
@@ -122,14 +124,9 @@
 
     // Create the standard tabs
     const tabs = [
-      {
-        label: DefaultTabs.TASKS,
-        filter: true
-      },
-      {
-        label: DefaultTabs.SOMEDAY,
-        filter: (task: Task) => task.type === TaskType.SOMEDAY
-      }
+      { label: DefaultTabs.TASKS },
+      { label: DefaultTabs.PROJECTS },
+      { label: DefaultTabs.SOMEDAY }
     ] as Tab[]
 
     // Add in the user's custom tabs
@@ -148,7 +145,10 @@
       tasks = plugin.tasks.getTasks(TaskType.SOMEDAY)
     } else if (state.activeTab === DefaultTabs.TASKS) {
       tasks = plugin.tasks.getTasklist()
+    } else if (state.activeTab === DefaultTabs.PROJECTS) {
+      tasks = plugin.tasks.getTasks(TaskType.PROJECT)
     } else {
+      // Custom user functions
       tasks = plugin.tasks.getTasklist()
         .filter(tabs.find(x => x.label === state.activeTab)?.filter || (() => true))
     }

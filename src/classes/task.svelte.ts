@@ -491,6 +491,9 @@ export class Task implements TaskRow {
     return ancestors.reverse()
   }
 
+  /**
+   * Return all subtasks for this task/project (including completed tasks)
+   */
   get children (): Task[] {
     const tasks = this.tasks.db.rows() // Get all tasks
 
@@ -511,6 +514,13 @@ export class Task implements TaskRow {
   }
 
   /**
+   * Return all uncompleted subtasks for this task/project
+   */
+  get activeChildren (): Task[] {
+    return this.children.filter(child => !child.isCompleted)
+  }
+
+    /**
    * Creates a subtask for the current task. This will convert the current task
    * to a project if not already the case.
    * It will add the subtask at the end of any existing subtasks.
