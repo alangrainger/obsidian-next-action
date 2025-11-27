@@ -38,6 +38,11 @@ export class Tasks {
       debug('Processing debounced queue')
       this.processQueue().then()
     }, 5000, true)
+
+    // Orphan tasks on file delete
+    plugin.registerEvent(this.app.vault.on('delete', file => {
+      if (file instanceof TFile) this.orphanTasksFromPath(file.path)
+    }))
   }
 
   get blockPrefix () {
@@ -54,7 +59,7 @@ export class Tasks {
 
     if (noteIsExcluded(cacheUpdate, this.plugin)) {
       // This note is excluded from processing, orphan any existing tasks
-      this.orphanOtherTasks(cacheUpdate.file.path, [])
+      this.orphanTasksFromPath(cacheUpdate.file.path)
       return
     }
 
@@ -69,7 +74,7 @@ export class Tasks {
 
     // Orphan tasks in the DB which are no longer present in the note
     const processedIds = processed.map(x => x.task.id)
-    this.orphanOtherTasks(cacheUpdate.file.path, processedIds)
+    this.orphanTasksFromPath(cacheUpdate.file.path, processedIds)
 
     // Update the file markdown contents if needed, for example to add task IDs
     if (updated.length) {
@@ -233,7 +238,10 @@ export class Tasks {
 
   }
 
-  orphanOtherTasks (path: string, keepIds: number[]) {
+  /**
+   * Orphan tasks from a given path, excluding ones from the keepIds array
+   */
+  orphanTasksFromPath (path: string, keepIds: number[] = []) {
     this.db.rows()
       .filter(row =>
         !row.orphaned &&
