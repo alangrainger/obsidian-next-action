@@ -74,6 +74,7 @@ export interface TaskZeroSettings {
   defaultNote: string;
   archiveNote: string;
   taskBlockPrefix: string;
+  styleBlockId: boolean;
   displayOptions: {
     waitingOn: DisplayOption;
     created: DisplayOption;
@@ -110,6 +111,7 @@ export const DEFAULT_SETTINGS: TaskZeroSettings = {
   defaultNote: 'Task Zero quick add',
   archiveNote: 'Task Zero completed tasks',
   taskBlockPrefix: 'tz',
+  styleBlockId: true,
   displayOptions: {
     waitingOn: DisplayOption.TAG,
     created: DisplayOption.NONE,
@@ -206,6 +208,17 @@ export class DoSettingTab extends PluginSettingTab {
         })
         text.setValue(this.plugin.settings.archiveNote)
       })
+
+    new Setting(containerEl)
+      .setName('Style task block IDs')
+      .setDesc('Task Zero identifies tasks by adding a block ID to each task line. By default it styles those block IDs to make them less visually obvious. Turn this off if you want Obsidian\'s standard block ID styling.')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.styleBlockId)
+        .onChange(async value => {
+          this.plugin.settings.styleBlockId = value
+          await this.plugin.saveSettings()
+          this.plugin.applyRootClass()
+        }))
 
     new Setting(containerEl)
       .setHeading()

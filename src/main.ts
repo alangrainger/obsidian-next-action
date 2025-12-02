@@ -18,6 +18,7 @@ export default class TaskZeroPlugin extends Plugin {
     // Settings
     await this.loadSettings()
     this.addSettingTab(new DoSettingTab(this.app, this))
+    this.applyRootClass()
     this.userActivity = new DetectUser()
     this.updateQueue = new UpdateQueue(this)
 
@@ -107,6 +108,14 @@ export default class TaskZeroPlugin extends Plugin {
       await this.saveData(this.settings)
     } else {
       debug('Not saving settings, as not the master device')
+    }
+  }
+
+  applyRootClass () {
+    if (this.settings.styleBlockId) {
+      document.body.addClass('task-zero')
+    } else {
+      document.body.removeClass('task-zero')
     }
   }
 
