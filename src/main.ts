@@ -96,11 +96,7 @@ export default class TaskZeroPlugin extends Plugin {
       with two devices modifying copies of the database and causing lost data.
       The master device can be revoked from inside the Settings page.
 
-      Since not everyone will be using Obsidian Sync, I can't check the
-      status of sync.instance either. If two devices are modifying files,
-      they can get into a race condition where each is updating tasks
-      then syncing the changes, causing the other device to react to the
-      metadataCache change and so on.
+      See https://taskzero.alan.gr/master-device for more details.
      */
     if (this.isMaster() || !this.settings.masterAppId) {
       await this.saveData(this.settings)
@@ -135,8 +131,9 @@ export default class TaskZeroPlugin extends Plugin {
   }
 
   /**
-   * Is the current device the master device
-   * See the explanation in this.saveSettings() for more details
+   * Is the current device the master device?
+   *
+   * See https://taskzero.alan.gr/master-device for more details.
    */
   isMaster () { return this.app.appId === this.settings.masterAppId }
 }
