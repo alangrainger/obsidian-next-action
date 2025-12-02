@@ -29,7 +29,7 @@ const DATE_WORDS = {
 export class MarkdownTaskParser {
   plugin: TaskZeroPlugin
   regex: { [key: string]: RegExp }
-  taskLine = ''
+  taskline = ''
 
   constructor (plugin: TaskZeroPlugin) {
     this.plugin = plugin
@@ -55,7 +55,7 @@ export class MarkdownTaskParser {
    * Process an arbitrary line of text to extract task elements
    */
   processText (text: string): ParsedMarkdownTask {
-    this.taskLine = text
+    this.taskline = text
 
     // Run all functions first, as they remove the matched text from the remaining task text
     const isProject = this.isProject()
@@ -70,8 +70,8 @@ export class MarkdownTaskParser {
     // Ensure all icons are removed from the final task line
     Object.values(TaskEmoji)
       .forEach(emoji => {
-        while (emoji && this.taskLine.includes(emoji)) {
-          this.taskLine = this.taskLine.replace(emoji, ' ')
+        while (emoji && this.taskline.includes(emoji)) {
+          this.taskline = this.taskline.replace(emoji, ' ')
         }
       })
 
@@ -82,7 +82,7 @@ export class MarkdownTaskParser {
         due,
         scheduled,
         completed,
-        text: this.taskLine.trim()
+        text: this.taskline.trim()
       },
       excluded: !!excluded
     }
@@ -92,14 +92,14 @@ export class MarkdownTaskParser {
    * Process a full markdown task line (e.g. it starts with "- [ ] ..."
    */
   processTaskLine (text: string): ParsedMarkdownTask | false {
-    this.taskLine = text
+    this.taskline = text
 
     // Run all functions first, as they remove the matched text from the remaining task text
     const status = this.getStatus()
     if (!status) return false // Doesn't appear to be a task line
     const id = this.getId()
     // Process remaining elements
-    const data = this.processText(this.taskLine)
+    const data = this.processText(this.taskline)
     data.parsed.id = id
     data.parsed.status = status
 
@@ -111,10 +111,10 @@ export class MarkdownTaskParser {
     let matching = true
     // Remove multiple occurrences if they exist
     while (matching) {
-      const match = this.taskLine.match(regex)
+      const match = this.taskline.match(regex)
       if (match) {
         foundText = match[1]
-        this.taskLine = this.taskLine.replace(regex, ' ')
+        this.taskline = this.taskline.replace(regex, ' ')
       } else {
         matching = false
       }
@@ -157,7 +157,7 @@ export class MarkdownTaskParser {
     if (standard) return standard
 
     // This is for the special $date type
-    const match = this.taskLine.match(/(?:^|\s)\$([a-z]+)(?:\s|$)/)
+    const match = this.taskline.match(/(?:^|\s)\$([a-z]+)(?:\s|$)/)
     if (!match || match?.length < 2) return ''
     const input = match[1]
     let date = ''
@@ -183,7 +183,7 @@ export class MarkdownTaskParser {
     }
 
     // Remove the original input text from the task line
-    if (date) this.taskLine = this.taskLine.replace(match[0], ' ')
+    if (date) this.taskline = this.taskline.replace(match[0], ' ')
 
     return date
   }
