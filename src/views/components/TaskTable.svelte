@@ -63,7 +63,7 @@
 
   // Watch for changes to the active task's text, and re-render the HTML/markdown
   $effect(() => {
-    if (activeTask?.text) activeTask.renderMarkdown().then()
+    if (activeTask?.text) void activeTask.renderMarkdown()
   })
 
   async function openActiveRow () {
@@ -175,20 +175,20 @@
 
   function newTask () {
     const project = activeTask.type === TaskType.PROJECT ? activeTask : null
-    new TaskInputModal(plugin, project, (taskText) => {
+    new TaskInputModal(plugin, project, async (taskText) => {
       if (!taskText.trim().length) {
         return
       } else if (project) {
         // If this is a project line, add the task as a subtask of that project
         const nextTaskInList = getRowDown()
-        activeTask.addSubtask(taskText).then()
+        await activeTask.addSubtask(taskText)
         // Remove the project from the tasklist since it now has a next action
         state.tasks.splice(activeIndex, 1)
         state.activeId = nextTaskInList.id
       } else {
         // Otherwise, add the task to the default note
         const task = new Task(plugin.tasks).initFromText(taskText).task
-        plugin.tasks.addTaskToDefaultNote(task).then()
+        await plugin.tasks.addTaskToDefaultNote(task)
       }
     }).open()
   }

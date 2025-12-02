@@ -81,7 +81,7 @@ export interface TaskZeroSettings {
     scheduled: DisplayOption;
     due: DisplayOption;
     completed: DisplayOption;
-    [key: string]: any
+    [key: string]: DisplayOption
   }
   hotkeys: {
     [key: string]: Hotkey
@@ -104,7 +104,7 @@ export interface TaskZeroSettings {
   }
   debug: boolean;
 
-  [key: string]: any
+  [key: string]: unknown;
 }
 
 export const DEFAULT_SETTINGS: TaskZeroSettings = {
@@ -222,12 +222,12 @@ export class DoSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setHeading()
-      .setName('Tasklist Tabs')
+      .setName('Tasklist tabs')
       .addButton(button => button
         .setButtonText('Add another tab')
         .setCta()
         .onClick(() => {
-          this.settings.tasklistTabs.push({ id: '', label: '' })
+          this.settings.tasklistTabs.push({ label: '' })
           this.display()
         }))
 
@@ -235,7 +235,7 @@ export class DoSettingTab extends PluginSettingTab {
       .setName('Main tasklist')
       .setDesc('This is a built-in tab and cannot be removed.')
 
-    this.settings.tasklistTabs.forEach((tab, i) => {
+    this.settings.tasklistTabs.forEach((tab: Tab, i) => {
       new Setting(containerEl)
         .setName(`Tab #${i + 2} settings:`)
         .addButton(button => button

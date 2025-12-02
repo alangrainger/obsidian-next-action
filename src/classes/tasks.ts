@@ -1,7 +1,7 @@
-import { Task, type TaskRow, TaskStatus, TaskType } from './task.svelte'
+import { Task, TaskStatus, TaskType } from './task.svelte'
 import TaskZeroPlugin from '../main'
 import { type App, type CachedMetadata, debounce, type ListItemCache, TFile } from 'obsidian'
-import { Table, Tablename } from './table'
+import { Database } from './table'
 import { DatabaseEvent, dbEvents } from './database-events'
 import { moment, debug, getOrCreateFile } from '../functions'
 import { TaskInputModal } from '../views/task-input-modal'
@@ -24,18 +24,18 @@ export class Tasks {
   readonly tableName = 'tasks'
   app: App
   plugin: TaskZeroPlugin
-  db: Table<TaskRow>
+  db: Database
   private noteUpdateQueue: Set<number> = new Set([])
   private readonly debounceQueueUpdate: () => void
 
   constructor (plugin: TaskZeroPlugin) {
     this.plugin = plugin
     this.app = plugin.app
-    this.db = new Table<TaskRow>(this.plugin, Tablename.TASKS)
+    this.db = new Database(this.plugin)
 
     this.debounceQueueUpdate = debounce(() => {
       debug('Processing debounced queue')
-      this.processQueue().then()
+      void this.processQueue()
     }, 5000, true)
 
     // Orphan tasks on file delete
@@ -66,7 +66,11 @@ export class Tasks {
     for (const item of (cacheUpdate.cache.listItems?.filter(x => x.task) || [])) {
       const res = new Task(this).initFromListItem(item, cacheUpdate, processed)
       if (res.valid) {
-        processed.push({ task: res.task, cacheItem: item, hasChanges: res.hasChanges })
+        processed.push({
+          task: res.task,
+          cacheItem: item,
+          hasChanges: res.hasChanges
+        })
       }
     }
     const updated = processed.filter(x => x.hasChanges)
@@ -185,7 +189,7 @@ export class Tasks {
 
   async processQueue () {
     // Split queue into files
-    const grouped: any = []
+    const grouped: Record<string, Task[]> = {}
     this.noteUpdateQueue.forEach(id => {
       const task = new Task(this).initFromId(id).task
       if (task.valid()) {
@@ -228,7 +232,7 @@ export class Tasks {
     new TaskInputModal(this.plugin, null, taskText => {
       if (taskText.trim().length) {
         const task = new Task(this).initFromText(taskText).task
-        this.addTaskToDefaultNote(task).then()
+        void this.addTaskToDefaultNote(task)
       }
     }).open()
   }
@@ -258,7 +262,7 @@ export class Tasks {
 
     debug('🗑️ Cleaning up orphaned tasks')
     this.plugin.settings.database.lastCleanup = now
-    this.plugin.saveSettings().then()
+    void this.plugin.saveSettings()
 
     const existingNotes = new Set<string>()
     const deletedNotes = new Set<string>()
@@ -267,8 +271,9 @@ export class Tasks {
       const row = rows[i]
       if (row.orphaned) {
         // Remove orphaned tasks older than 14 days
-        if (row.orphaned < now - 1000 * 60 * 60 * 24 * 14)
+        if (row.orphaned < now - 1000 * 60 * 60 * 24 * 14) {
           this.db.delete(row.id)
+        }
       } else if (!row.path) {
         // Orphan tasks with no associated note
         row.orphaned = now
@@ -300,19 +305,19 @@ export function noteIsExcluded (cacheUpdate: CacheUpdate, plugin: TaskZeroPlugin
   if (!cacheUpdate) return false
   const tag = plugin.settings.excludeTags.note.replace(/#/g, '')
   const tags = [tag, `#${tag}`]
-  let standard = [], body = [], list = []
+  let standard: string[] = [], body: string[] = [], list: string[] = []
   // The standard frontmatter tags array
   try {
     standard = (cacheUpdate.cache?.frontmatter?.tags || []).map((x: any) => x.tag).filter((tag: string) => tags.includes(tag))
-  } catch (_) {}
+  } catch (e) { debug(e) }
   // If the tag exists in the body of the note
   try {
     body = (cacheUpdate.cache?.tags || []).map(x => x.tag).filter((tag: string) => tags.includes(tag))
-  } catch (_) {}
+  } catch (e) { debug(e) }
   // In case the user has put tags into the frontmatter with # symbol, causing them to become a list
   try {
     list = (cacheUpdate.cache?.frontmatter?.tags || []).filter((tag: string) => tags.includes(tag))
-  } catch (_) {}
+  } catch (e) { debug(e) }
 
   const excluded = standard?.length || body?.length || list?.length
   if (excluded) debug(`Note ${cacheUpdate.file.path} is excluded from processing because it has the tag #${tag}`)

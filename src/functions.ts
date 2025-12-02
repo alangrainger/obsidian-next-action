@@ -20,8 +20,8 @@ I do not have the skill or knowledge to solve this problem.
 export const moment = momentModule.default || momentModule
 
 export const debug: { (...message: any[]): void, enabled: boolean } = Object.assign(
-  function (...message: any[]) {
-    if (debug.enabled) console.log(...message)
+  function (...message: (string | number | boolean | undefined)[]) {
+    if (debug.enabled) console.debug(...message)
   },
   { enabled: false }
 )
@@ -34,7 +34,7 @@ export function assignExisting (
     if (!source) continue
     for (const key in source) {
       if (source[key]) {
-        target[key] = source[key] as TaskRow[Extract<keyof TaskRow, string>]
+        target[key] = source[key]
       }
     }
   }

@@ -39,7 +39,7 @@ export class UpdateQueue {
     if (!this.queue.includes(path)) {
       debug(`Added ${path} to update queue`)
       this.queue.push(path)
-      this.plugin.saveSettings().then()
+      void this.plugin.saveSettings()
     }
     this.checkQueue()
   }
@@ -48,7 +48,7 @@ export class UpdateQueue {
     const index = this.queue.indexOf(path)
     if (index !== -1) {
       this.queue.splice(index, 1)
-      this.plugin.saveSettings().then()
+      void this.plugin.saveSettings()
     }
   }
 
@@ -80,7 +80,7 @@ export class UpdateQueue {
             }
           }
         } catch (e) {
-          console.log(e)
+          debug(e)
         }
       }
     }

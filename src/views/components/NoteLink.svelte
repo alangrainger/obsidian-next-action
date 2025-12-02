@@ -14,7 +14,7 @@
 
   function openLink (event: MouseEvent) {
     event.stopPropagation()
-    if (task?.path) task.tasks.app.workspace.openLinkText(basename, task.path).then()
+    if (task?.path) void task.tasks.app.workspace.openLinkText(basename, task.path)
   }
 </script>
 

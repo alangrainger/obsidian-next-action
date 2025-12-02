@@ -26,10 +26,7 @@ export default class TaskZeroPlugin extends Plugin {
 
     this.registerView(
       TASK_ZERO_VIEW_TYPE,
-      leaf => {
-        this.view = new TaskZeroView(leaf, this)
-        return this.view
-      }
+      (leaf) => new TaskZeroView(leaf, this)
     )
     this.addRibbonIcon('square-check-big', 'Open Tasklist', () => {
       this.activateView()
@@ -60,15 +57,17 @@ export default class TaskZeroPlugin extends Plugin {
           (async () => {
             let completedTaskString = ''
             // Remove tasks from original file
-            await this.app.vault.process(view.file as TFile, data => {
-              const taskRegex = /(?<=(^|\n))[ \t]*- \[x].*?(\n|$)/sg
-              const completedTasks = data.match(taskRegex)?.map(line => line.trim()).join('\n')
-              if (completedTasks) {
-                completedTaskString = completedTasks
-                data = data.replace(taskRegex, '')
-              }
-              return data
-            })
+            if (view.file instanceof TFile) {
+              await this.app.vault.process(view.file, data => {
+                const taskRegex = /(?:^|\n)[ \t]*- \[x].*?(\n|$)/sg
+                const completedTasks = data.match(taskRegex)?.map(line => line.trim()).join('\n')
+                if (completedTasks) {
+                  completedTaskString = completedTasks
+                  data = data.replace(taskRegex, '')
+                }
+                return data
+              })
+            }
             // Add tasks to the archive file
             const file = await getOrCreateFile(this.app, this.settings.archiveNote)
             await this.app.vault.append(file, completedTaskString.trim() + '\n')
@@ -82,7 +81,6 @@ export default class TaskZeroPlugin extends Plugin {
   }
 
   onunload () {
-    this.view?.close().then()
     this.updateQueue.unload()
     this.userActivity.unload()
     dbEvents.destroy()
@@ -120,24 +118,20 @@ export default class TaskZeroPlugin extends Plugin {
   }
 
   async activateView () {
-    const { workspace } = this.app
-
     let leaf: WorkspaceLeaf | null
-
-    const leaves = workspace.getLeavesOfType(TASK_ZERO_VIEW_TYPE)
+    const leaves = this.app.workspace.getLeavesOfType(TASK_ZERO_VIEW_TYPE)
     if (leaves.length > 0) {
-      // A leaf with our view already exists, use that
       leaf = leaves[0]
     } else {
-      // Our view could not be found in the workspace, create a new leaf
-      leaf = workspace.getLeaf(true)
+      // No view found, create a new leaf
+      leaf = this.app.workspace.getLeaf(true)
       await leaf?.setViewState({
         type: TASK_ZERO_VIEW_TYPE,
         active: true
       })
     }
     // Reveal the leaf
-    if (leaf) workspace.revealLeaf(leaf).then()
+    if (leaf) void this.app.workspace.revealLeaf(leaf)
   }
 
   /**

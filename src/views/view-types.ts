@@ -15,7 +15,6 @@ export interface State {
 }
 
 export interface Tab {
-  [key: string]: any;
   label: string,
   tag?: string,
   icon?: string,

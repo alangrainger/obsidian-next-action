@@ -3,27 +3,16 @@ import { TaskChangeEvent } from './tasks'
 import moment from 'moment'
 import { debug } from '../functions'
 import type TaskZeroPlugin from '../main'
+import type { TaskRow } from './task.svelte'
 
-export enum Tablename {
-  TASKS = 'tasks'
+type Data = {
+  rows: TaskRow[]
+  autoincrement: number
 }
 
-interface BaseRow {
-  [key: string]: any
-
-  id: number
-  created: string
-}
-
-interface Data<R> {
-  autoincrement: number;
-  rows: R[]
-}
-
-export class Table<R extends BaseRow> {
+export class Database {
   plugin: TaskZeroPlugin
-  name: string
-  data: Data<R>
+  data: Data
   dataChanged: Event
   initialised = false
 
@@ -32,13 +21,12 @@ export class Table<R extends BaseRow> {
    */
   saveDb: () => void
 
-  constructor (plugin: TaskZeroPlugin, name: Tablename) {
+  constructor (plugin: TaskZeroPlugin) {
     this.plugin = plugin
-    this.name = name
     this.dataChanged = new Event(TaskChangeEvent)
 
     // Load data
-    this.data = this.plugin.settings.database[name] as unknown as Data<R>
+    this.data = this.plugin.settings.database.tasks as Data
 
     // Double-check the autoincrement
     const existing = Math.max(...this.data.rows.map(x => x.id)) || 0
@@ -65,7 +53,7 @@ export class Table<R extends BaseRow> {
     return id
   }
 
-  insert (data: R) {
+  insert (data: TaskRow) {
     if (data.id) {
       debug('Insert should not include a row ID', data)
       return null
@@ -81,7 +69,7 @@ export class Table<R extends BaseRow> {
    * Update a row
    * @param data
    */
-  update (data: R) {
+  update (data: TaskRow) {
     if (!data.id) return null
     // Update the autoincrement in case of imported or manually edited tasks
     this.data.autoincrement = Math.max(this.data.autoincrement, data.id + 1)
@@ -106,7 +94,7 @@ export class Table<R extends BaseRow> {
   /**
    * Insert or Update a row
    */
-  insertOrUpdate (data: R) {
+  insertOrUpdate (data: TaskRow) {
     if (data.id) {
       this.update(data)
       return data

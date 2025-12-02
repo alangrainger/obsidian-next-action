@@ -85,7 +85,7 @@ export class MoveFileModal extends Modal {
             const otherTaskId = parseInt(this.otherTaskId, 10) || undefined
             if (this.position === 'before' && otherTaskId) beforeTask = otherTaskId
             if (this.position === 'after' && otherTaskId) afterTask = otherTaskId
-            this.task.move(this.newPath, beforeTask, afterTask).then()
+            void this.task.move(this.newPath, beforeTask, afterTask)
             this.close()
           })
       })

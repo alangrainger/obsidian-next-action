@@ -100,10 +100,10 @@ export class MoveToProjectModal extends Modal {
 
             if (this.position === 'start') {
               // Move as the first subtask of the project
-              this.taskToMove.move(this.projectTask.path, undefined, this.projectTask.id).then()
+              void this.taskToMove.move(this.projectTask.path, undefined, this.projectTask.id)
             } else if (this.position === 'end') {
               // Move as the last task of the project
-              this.taskToMove.move(this.projectTask.path, undefined, lastId).then()
+              void this.taskToMove.move(this.projectTask.path, undefined, lastId)
             } else {
               // Move before or after a subtask in the project
               const otherTaskId = parseInt(this.otherTaskId, 10) || undefined
@@ -111,7 +111,7 @@ export class MoveToProjectModal extends Modal {
               if (this.position === 'before' && otherTaskId) beforeTask = otherTaskId
               if (this.position === 'after' && otherTaskId) afterTask = otherTaskId
               if (!beforeTask && !afterTask) afterTask = lastId
-              this.taskToMove.move(this.projectTask.path, beforeTask, afterTask).then()
+              void this.taskToMove.move(this.projectTask.path, beforeTask, afterTask)
             }
             this.close()
           })

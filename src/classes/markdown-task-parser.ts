@@ -4,7 +4,7 @@ import { moment } from '../functions'
 
 const DATE_FORMAT = 'YYYY-MM-DD'
 
-export type MarkdownTaskElements = Omit<TaskRow, 'type'>
+export type MarkdownTaskElements = Partial<TaskRow>
 
 export type ParsedMarkdownTask = {
   parsed: MarkdownTaskElements
@@ -100,7 +100,7 @@ export class MarkdownTaskParser {
     const id = this.getId()
     // Process remaining elements
     const data = this.processText(this.taskline)
-    data.parsed.id = id
+    data.parsed.id = id || 0
     data.parsed.status = status
 
     return data

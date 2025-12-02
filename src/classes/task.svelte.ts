@@ -40,8 +40,6 @@ type TaskInitResult = {
 }
 
 export interface TaskRow {
-  [key: string]: any
-
   id: number
   status: TaskStatus
   text: string
@@ -144,7 +142,7 @@ export class Task implements TaskRow {
   /**
    * "Due" is considered a task which has a "scheduled" or "due" date which is on or before today
    */
-  get isDue (): moment.Moment | undefined {
+  get isDue () {
     const today = moment()
 
     if (this.due) {
@@ -410,7 +408,7 @@ export class Task implements TaskRow {
     this.tasks.db.update(this.getData())
 
     // Render the markdown so it's available
-    this.renderMarkdown().then()
+    void this.renderMarkdown()
 
     // Queue the task for update in the original markdown note
     this.tasks.addTaskToUpdateQueue(this.id)
