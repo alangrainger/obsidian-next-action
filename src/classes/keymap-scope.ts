@@ -36,6 +36,7 @@ export class KeymapScope {
 
   addHotkey (...[hotkey, callback]: HotkeyConfig) {
     this.scope.register(hotkey.modifiers, hotkey.key, _ => {
+      this.plugin.userActivity.updateActivity() // Since we preventDefault
       callback()
       // Return false to preventDefault
       return false

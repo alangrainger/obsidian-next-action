@@ -1,9 +1,10 @@
 import { type App, Component, type ListItemCache, MarkdownRenderer } from 'obsidian'
 import { type CacheUpdate, type CacheUpdateItem, noteIsExcluded, Tasks } from './tasks'
-import { moment, assignExisting, debug } from '../functions'
+import { assignExisting, debug, moment } from '../functions'
 import { MarkdownTaskParser } from './markdown-task-parser'
 import { DisplayOption } from '../settings'
 import type TaskZeroPlugin from '../main'
+import { DatabaseEvent, dbEvents } from './database-events'
 
 export enum TaskStatus {
   TODO = ' ',
@@ -404,6 +405,7 @@ export class Task implements TaskRow {
 
     // Update the DB with the new data
     this.tasks.db.update(this.getData())
+    dbEvents.emit(DatabaseEvent.TasksChanged)
 
     // Render the markdown so it's available
     void this.renderMarkdown()
