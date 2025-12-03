@@ -318,10 +318,11 @@ export class Task implements TaskRow {
   }
 
   setAs (type: TaskType) {
-    if (type === this.type) return // no change
-    // new Notice('Changing task type to ' + type)
-    this.type = type
-    this.update()
+    if (type !== this.type) {
+      this.type = type
+      this.update()
+    }
+    return this
   }
 
   getTypeSignifier () {
@@ -400,7 +401,7 @@ export class Task implements TaskRow {
   update () {
     if (!this.id || !this.path) {
       debug('Unable to update task ' + this.text + ' as there is no ID or path for it')
-      return
+      return this
     }
 
     // Update the DB with the new data
@@ -412,6 +413,8 @@ export class Task implements TaskRow {
 
     // Queue the task for update in the original markdown note
     this.tasks.addTaskToUpdateQueue(this.id)
+
+    return this
   }
 
   /**
@@ -421,9 +424,12 @@ export class Task implements TaskRow {
    * @param afterTask - (optional) Move it after the task with this ID
    */
   async move (toPath: string, beforeTask?: number, afterTask?: number) {
+    const newFile = this.app.vault.getFileByPath(toPath)
+    if (!newFile) return this
+
     // Remove the task from its current note
     const currentFile = this.app.vault.getFileByPath(this.path)
-    if (!currentFile) return
+    if (!currentFile) return this
     await this.app.vault.process(currentFile, data => {
       const lines = data.split('\n')
       const index = lines.findIndex(line => line.endsWith(` ^${this.tasks.blockPrefix}${this.id}`))
@@ -442,8 +448,6 @@ export class Task implements TaskRow {
     }
 
     // Add task to new note
-    const newFile = this.app.vault.getFileByPath(toPath)
-    if (!newFile) return
     await this.app.vault.process(newFile, data => {
       if (line >= 0) {
         // Insert task at the specific position
@@ -456,12 +460,8 @@ export class Task implements TaskRow {
       }
       return data
     })
-  }
 
-  async moveToProject (project: Task) {
-    const projectPath = project.path
-    if (!projectPath) return
-    await this.move(projectPath)
+    return this
   }
 
   async renderMarkdown () {
@@ -517,10 +517,12 @@ export class Task implements TaskRow {
     return this.children.filter(child => !child.isCompleted)
   }
 
-    /**
+  /**
    * Creates a subtask for the current task. This will convert the current task
    * to a project if not already the case.
    * It will add the subtask at the end of any existing subtasks.
+   *
+   * Returns the newly added subtask
    */
   async addSubtask (newTaskText: string, type?: TaskType) {
     // Get the position in the note to insert the new task
@@ -543,5 +545,7 @@ export class Task implements TaskRow {
         return lines.join('\n')
       })
     }
+
+    return subtask
   }
 }

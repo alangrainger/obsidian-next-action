@@ -128,7 +128,7 @@ export class Tasks {
    * Get all active tasks, i.e.:
    * - not orphaned
    * - not completed
-   * - exist in a note
+   * - exists in a note
    */
   getTasks (type?: TaskType) {
     return this.db.rows()
@@ -223,11 +223,14 @@ export class Tasks {
   }
 
   async addTaskToDefaultNote (task: Task) {
-    if (!task.valid()) return
+    if (!task.valid() || !this.plugin.settings.defaultNote) return
     const file = await getOrCreateFile(this.app, this.plugin.settings.defaultNote)
     await this.app.vault.append(file, task.generateMarkdownTask() + '\n')
   }
 
+  /**
+   * Quick capture task modal
+   */
   openQuickCapture () {
     new TaskInputModal(this.plugin, null, taskText => {
       if (taskText.trim().length) {
