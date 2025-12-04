@@ -53,7 +53,7 @@
   let anyProjects = $derived(state.tasks.filter(x => x.parent).length > 0)
   const isWarning = (task: Task) => !task.type ||
     task.type === TaskType.INBOX ||
-    task.type === TaskType.PROJECT && !task.activeChildren.length
+    task.type === TaskType.PROJECT && !task.activeDescendants.length
 
   $effect(() => {
     if (state.viewIsActive) {

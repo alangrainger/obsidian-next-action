@@ -241,19 +241,21 @@ export class Task implements TaskRow {
       const parentTask = previous.find(x => x.task.line === item.parent)?.task
       if (parentTask) {
         record.parent = parentTask.id
-        // Ensure the root-level parent is set to Project type
+        // Ensure the parent is set to Project type
+        if (parentTask.type !== TaskType.PROJECT) {
+          parentTask.type = TaskType.PROJECT
+          const parentItem = previous.find(x => x.task.id === parentTask.id)
+          if (parentItem) parentItem.hasChanges = true
+        }
+        // Check all the previously processed subtasks in the same tree
+        // The first available subtask should be active and the rest should be Dependent
         let ancestors = parentTask.ancestors
         ancestors = ancestors.length ? ancestors : [parentTask]
         const rootParent = ancestors[0]
-        rootParent.type = TaskType.PROJECT
-        // Ensure the root parent is in the 'updated' list
-        const rootParentItem = previous.find(x => x.task.id === rootParent.id)
-        if (rootParentItem) rootParentItem.hasChanges = true
-        // Check all the previously processed tasks that share this rootParent.
-        // The first available sub-task should be active and the rest should be Dependent
-        if (previous.find(prev => ancestors
-          .map(x => x.id)
-          .includes(prev.task.parent) && !prev.task.isCompleted)) {
+        if (previous.find(prev =>
+          prev.task.ancestors[0]?.id === rootParent.id  &&
+          !prev.task.isCompleted && prev.task.type !== TaskType.PROJECT)) {
+          // There is at least one previous next action, therefore this task is dependent
           record.type = TaskType.DEPENDENT
         } else if (!record.type || [TaskType.INBOX, TaskType.DEPENDENT].includes(record.type)) {
           // If it's the first task in the sequence, make sure it's not "Dependent".
@@ -488,16 +490,22 @@ export class Task implements TaskRow {
     return ancestors.reverse()
   }
 
+  get children (): Task[] {
+    return this.tasks.db.rows()
+      .filter(row => row.parent === this.id)
+      .map(row => new Task(this.tasks).initFromRow(row).task)
+  }
+
   /**
    * Return all subtasks for this task/project (including completed tasks)
    */
-  get children (): Task[] {
-    const tasks = this.tasks.db.rows() // Get all tasks
+  get descendants (): Task[] {
+    const tasks = this.tasks.db.rows().filter(row => row.parent > 0 && row.orphaned === 0)
 
     // Recursive function to get descendants
     const getDescendants = (parentId: number): Task[] => {
       return tasks
-        .filter(row => row.parent === parentId && row.orphaned === 0)
+        .filter(row => row.parent === parentId)
         .map(row => [
           new Task(this.tasks).initFromRow(row).task,
           ...getDescendants(row.id)
@@ -513,8 +521,8 @@ export class Task implements TaskRow {
   /**
    * Return all uncompleted subtasks for this task/project
    */
-  get activeChildren (): Task[] {
-    return this.children.filter(child => !child.isCompleted)
+  get activeDescendants (): Task[] {
+    return this.descendants.filter(child => !child.isCompleted)
   }
 
   /**
@@ -526,7 +534,7 @@ export class Task implements TaskRow {
    */
   async addSubtask (newTaskText: string, type?: TaskType) {
     // Get the position in the note to insert the new task
-    const descendants = this.children
+    const descendants = this.descendants
     const line = (descendants.length ? descendants[descendants.length - 1].line : this.line) + 1
 
     // Create the new subtask

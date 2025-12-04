@@ -96,7 +96,7 @@ export class MoveToProjectModal extends Modal {
           .onClick(() => {
             if (!this.projectTask) return
             this.taskToMove.parent = this.projectTask.id
-            const lastId = this.projectTask.children[this.projectTask.children.length - 1]?.id || this.projectTask.id
+            const lastId = this.projectTask.descendants[this.projectTask.descendants.length - 1]?.id || this.projectTask.id
 
             if (this.position === 'start') {
               // Move as the first subtask of the project
