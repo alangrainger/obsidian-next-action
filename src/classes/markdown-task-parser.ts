@@ -27,14 +27,14 @@ const DATE_WORDS = {
 }
 
 export class MarkdownTaskParser {
-  private plugin: TaskZeroPlugin
-  private regex: { [key: string]: RegExp }
-  private taskline = ''
+  #plugin: TaskZeroPlugin
+  #regex: { [key: string]: RegExp }
+  #taskline = ''
 
   constructor (plugin: TaskZeroPlugin) {
-    this.plugin = plugin
-    this.regex = {
-      id: new RegExp(`\\^${this.blockPrefix}(\\d+)\\s*$`),
+    this.#plugin = plugin
+    this.#regex = {
+      id: new RegExp(`\\^${this.#blockPrefix}(\\d+)\\s*$`),
       status: /^\s*-\s+\[(.)]\s+/,
       project: new RegExp(`\\s+(${TaskEmoji.PROJECT}|#${TaskType.PROJECT})[^\\w-]`),
       someday: new RegExp(`\\s+(${TaskEmoji.SOMEDAY}|#${TaskType.SOMEDAY})[^\\w-]`),
@@ -47,31 +47,31 @@ export class MarkdownTaskParser {
     } as const
   }
 
-  private get blockPrefix () {
-    return this.plugin.tasks.blockPrefix
+  get #blockPrefix () {
+    return this.#plugin.tasks.blockPrefix
   }
 
   /**
    * Process an arbitrary line of text to extract task elements
    */
   processText (text: string): ParsedMarkdownTask {
-    this.taskline = text
+    this.#taskline = text
 
     // Run all functions first, as they remove the matched text from the remaining task text
-    const isProject = this.isProject()
-    const isSomeday = this.isSomeday()
-    const isWaitingOn = this.isWaitingOn()
-    const created = this.getCreated()
-    const due = this.getDue()
-    const scheduled = this.getScheduled()
-    const completed = this.getCompleted()
-    const excluded = this.getExcluded()
+    const isProject = this.#isProject()
+    const isSomeday = this.#isSomeday()
+    const isWaitingOn = this.#isWaitingOn()
+    const created = this.#getCreated()
+    const due = this.#getDue()
+    const scheduled = this.#getScheduled()
+    const completed = this.#getCompleted()
+    const excluded = this.#getExcluded()
 
     // Ensure all icons are removed from the final task line
     Object.values(TaskEmoji)
       .forEach(emoji => {
-        while (emoji && this.taskline.includes(emoji)) {
-          this.taskline = this.taskline.replace(emoji, ' ')
+        while (emoji && this.#taskline.includes(emoji)) {
+          this.#taskline = this.#taskline.replace(emoji, ' ')
         }
       })
 
@@ -82,7 +82,7 @@ export class MarkdownTaskParser {
         due,
         scheduled,
         completed,
-        text: this.taskline.trim()
+        text: this.#taskline.trim()
       },
       excluded: !!excluded
     }
@@ -92,29 +92,29 @@ export class MarkdownTaskParser {
    * Process a full markdown task line (e.g. it starts with "- [ ] ..."
    */
   processTaskLine (text: string): ParsedMarkdownTask | false {
-    this.taskline = text
+    this.#taskline = text
 
     // Run all functions first, as they remove the matched text from the remaining task text
-    const status = this.getStatus()
+    const status = this.#getStatus()
     if (!status) return false // Doesn't appear to be a task line
-    const id = this.getId()
+    const id = this.#getId()
     // Process remaining elements
-    const data = this.processText(this.taskline)
+    const data = this.processText(this.#taskline)
     data.parsed.id = id || 0
     data.parsed.status = status
 
     return data
   }
 
-  private getAndRemoveMatch (regex: RegExp): string {
+  #getAndRemoveMatch (regex: RegExp): string {
     let foundText = ''
     let matching = true
     // Remove multiple occurrences if they exist
     while (matching) {
-      const match = this.taskline.match(regex)
+      const match = this.#taskline.match(regex)
       if (match) {
         foundText = match[1]
-        this.taskline = this.taskline.replace(regex, ' ')
+        this.#taskline = this.#taskline.replace(regex, ' ')
       } else {
         matching = false
       }
@@ -122,42 +122,42 @@ export class MarkdownTaskParser {
     return foundText
   }
 
-  private getId () {
-    const id = this.getAndRemoveMatch(this.regex.id)
+  #getId () {
+    const id = this.#getAndRemoveMatch(this.#regex.id)
     return id ? parseInt(id, 10) : undefined
   }
 
-  private getStatus () {
-    return this.getAndRemoveMatch(this.regex.status) as TaskStatus
+  #getStatus () {
+    return this.#getAndRemoveMatch(this.#regex.status) as TaskStatus
   }
 
-  private isProject () {
-    return !!this.getAndRemoveMatch(this.regex.project)
+  #isProject () {
+    return !!this.#getAndRemoveMatch(this.#regex.project)
   }
 
-  private isSomeday () {
-    return !!this.getAndRemoveMatch(this.regex.someday)
+  #isSomeday () {
+    return !!this.#getAndRemoveMatch(this.#regex.someday)
   }
 
-  private isWaitingOn () {
-    return !!this.getAndRemoveMatch(this.regex.waitingOn)
+  #isWaitingOn () {
+    return !!this.#getAndRemoveMatch(this.#regex.waitingOn)
   }
 
-  private getCreated () {
-    return this.getAndRemoveMatch(this.regex.created)
+  #getCreated () {
+    return this.#getAndRemoveMatch(this.#regex.created)
   }
 
-  private getDue () {
-    return this.getAndRemoveMatch(this.regex.due)
+  #getDue () {
+    return this.#getAndRemoveMatch(this.#regex.due)
   }
 
-  private getScheduled () {
+  #getScheduled () {
     // This is the normal ⏳ 2025-01-01 style
-    const standard = this.getAndRemoveMatch(this.regex.scheduled)
+    const standard = this.#getAndRemoveMatch(this.#regex.scheduled)
     if (standard) return standard
 
     // This is for the special $date type
-    const match = this.taskline.match(/(?:^|\s)\$([a-z]+)(?:\s|$)/)
+    const match = this.#taskline.match(/(?:^|\s)\$([a-z]+)(?:\s|$)/)
     if (!match || match?.length < 2) return ''
     const input = match[1]
     let date = ''
@@ -183,16 +183,16 @@ export class MarkdownTaskParser {
     }
 
     // Remove the original input text from the task line
-    if (date) this.taskline = this.taskline.replace(match[0], ' ')
+    if (date) this.#taskline = this.#taskline.replace(match[0], ' ')
 
     return date
   }
 
-  private getCompleted () {
-    return this.getAndRemoveMatch(this.regex.completed)
+  #getCompleted () {
+    return this.#getAndRemoveMatch(this.#regex.completed)
   }
 
-  private getExcluded () {
-    return this.getAndRemoveMatch(this.regex.excluded)
+  #getExcluded () {
+    return this.#getAndRemoveMatch(this.#regex.excluded)
   }
 }

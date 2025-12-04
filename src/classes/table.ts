@@ -11,44 +11,40 @@ type Data = {
 }
 
 export class Database {
-  private plugin: TaskZeroPlugin
-  private data: Data
-  private readonly dataChanged: Event
-
-  /**
-   * Save data to disk. This function is debounced.
-   */
-  saveDb: () => void
+  #plugin: TaskZeroPlugin
+  #data: Data
+  readonly #dataChanged: Event
+  readonly #saveDb: () => void
 
   constructor (plugin: TaskZeroPlugin) {
-    this.plugin = plugin
-    this.dataChanged = new Event(TaskChangeEvent)
+    this.#plugin = plugin
+    this.#dataChanged = new Event(TaskChangeEvent)
 
     // Load data
-    this.data = this.plugin.settings.database.tasks as Data
+    this.#data = this.#plugin.settings.database.tasks as Data
 
     // Double-check the autoincrement
-    const existing = Math.max(...this.data.rows.map(x => x.id)) || 0
-    this.data.autoincrement = Math.max(this.data.autoincrement, existing + 1)
+    const existing = Math.max(...this.#data.rows.map(x => x.id)) || 0
+    this.#data.autoincrement = Math.max(this.#data.autoincrement, existing + 1)
 
     // Set up debounce for database write to disk
-    this.saveDb = debounce(async () => {
-      dispatchEvent(this.dataChanged)
-      await this.plugin.saveSettings()
+    this.#saveDb = debounce(async () => {
+      dispatchEvent(this.#dataChanged)
+      await this.#plugin.saveSettings()
     }, 3000)
   }
 
   rows () {
-    return this.data.rows
+    return this.#data.rows
   }
 
   getRow (id: number) {
-    if (id) return this.data.rows.find(row => row.id === id)
+    if (id) return this.#data.rows.find(row => row.id === id)
   }
 
-  private getAutoincrementId () {
-    const id = this.data.autoincrement
-    this.data.autoincrement++
+  #getAutoincrementId () {
+    const id = this.#data.autoincrement
+    this.#data.autoincrement++
     return id
   }
 
@@ -57,9 +53,9 @@ export class Database {
       debug('Insert should not include a row ID', data)
       return null
     } else {
-      data.id = this.getAutoincrementId()
-      this.data.rows.push(data)
-      this.saveDb()
+      data.id = this.#getAutoincrementId()
+      this.#data.rows.push(data)
+      this.#saveDb()
       return data
     }
   }
@@ -71,22 +67,22 @@ export class Database {
   update (data: TaskRow) {
     if (!data.id) return null
     // Update the autoincrement in case of imported or manually edited tasks
-    this.data.autoincrement = Math.max(this.data.autoincrement, data.id + 1)
-    const index = this.data.rows.findIndex(x => x.id === data.id)
+    this.#data.autoincrement = Math.max(this.#data.autoincrement, data.id + 1)
+    const index = this.#data.rows.findIndex(x => x.id === data.id)
     if (index !== -1) {
       // Existing row found with this ID
-      const existing = this.data.rows[index]
+      const existing = this.#data.rows[index]
       // Don't update if the data is the same
       if (Object.keys(data).every(key => existing[key] === data[key])) {
         return null
       }
-      this.data.rows[index] = data
+      this.#data.rows[index] = data
     } else {
       // A task with this ID was not found in the database
       data.created = moment().format()
-      this.data.rows.push(data)
+      this.#data.rows.push(data)
     }
-    this.saveDb()
+    this.#saveDb()
     return data
   }
 
@@ -103,11 +99,11 @@ export class Database {
   }
 
   delete (id: number) {
-    const index = this.data.rows.findIndex(x => x.id === id)
+    const index = this.#data.rows.findIndex(x => x.id === id)
     if (index !== -1) {
-      this.data.rows.splice(index, 1)
+      this.#data.rows.splice(index, 1)
       debug('Deleted task ' + id)
-      this.saveDb()
+      this.#saveDb()
     }
   }
 }

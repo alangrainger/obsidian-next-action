@@ -24,15 +24,15 @@ export class Tasks {
   readonly app: App
   readonly plugin: TaskZeroPlugin
   readonly db: Database
-  private noteUpdateQueue: Set<number> = new Set([])
-  private readonly debounceQueueUpdate: () => void
+  #noteUpdateQueue: Set<number> = new Set([])
+  readonly #debounceQueueUpdate: () => void
 
   constructor (plugin: TaskZeroPlugin) {
     this.plugin = plugin
     this.app = plugin.app
     this.db = new Database(this.plugin)
 
-    this.debounceQueueUpdate = debounce(() => {
+    this.#debounceQueueUpdate = debounce(() => {
       debug('Processing debounced queue')
       void this.processQueue()
     }, 5000, true)
@@ -182,21 +182,21 @@ export class Tasks {
    */
   addTaskToUpdateQueue (id: number) {
     debug('Adding to queue: ' + id)
-    this.noteUpdateQueue.add(id)
-    this.debounceQueueUpdate()
+    this.#noteUpdateQueue.add(id)
+    this.#debounceQueueUpdate()
   }
 
   async processQueue () {
     // Split queue into files
     const grouped: Record<string, Task[]> = {}
-    this.noteUpdateQueue.forEach(id => {
+    this.#noteUpdateQueue.forEach(id => {
       const task = new Task(this).initFromId(id).task
       if (task.valid()) {
         if (!grouped[task.path]) grouped[task.path] = []
         grouped[task.path].push(task)
       }
     })
-    this.noteUpdateQueue = new Set([])
+    this.#noteUpdateQueue = new Set([])
 
     for (const path of Object.keys(grouped)) {
       await this.updateTasksInNote(path, grouped[path])
@@ -280,7 +280,7 @@ export class Tasks {
     tasks.forEach(task => {
       debug('Orphaning task ' + task.id)
       task.orphaned = moment().valueOf()
-      this.db.saveDb()
+      this.db.update(task)
     })
     dbEvents.emit(DatabaseEvent.TasksExternalChange)
   }

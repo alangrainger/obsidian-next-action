@@ -9,34 +9,34 @@ type Hotkey = {
 type HotkeyConfig = [Hotkey, callback: () => void]
 
 export class KeymapScope {
-  private readonly app: App
-  private readonly plugin: TaskZeroPlugin
+  readonly #app: App
+  readonly #plugin: TaskZeroPlugin
   readonly scope: Scope
-  private isActive = false
+  #isActive = false
 
   constructor (plugin: TaskZeroPlugin, parent: Scope) {
-    this.plugin = plugin
-    this.app = plugin.app
+    this.#plugin = plugin
+    this.#app = plugin.app
     this.scope = new Scope(parent)
   }
 
   enable () {
-    if (!this.isActive) {
-      this.isActive = true
-      this.app.keymap.pushScope(this.scope)
+    if (!this.#isActive) {
+      this.#isActive = true
+      this.#app.keymap.pushScope(this.scope)
     }
   }
 
   disable () {
-    if (this.isActive) {
-      this.isActive = false
-      this.app.keymap.popScope(this.scope)
+    if (this.#isActive) {
+      this.#isActive = false
+      this.#app.keymap.popScope(this.scope)
     }
   }
 
   addHotkey (...[hotkey, callback]: HotkeyConfig) {
     this.scope.register(hotkey.modifiers, hotkey.key, _ => {
-      this.plugin.userActivity.updateActivity() // Since we preventDefault
+      this.#plugin.userActivity.updateActivity() // Since we preventDefault
       callback()
       // Return false to preventDefault
       return false

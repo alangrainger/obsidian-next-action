@@ -56,9 +56,9 @@ export interface TaskRow {
 }
 
 export class Task implements TaskRow {
-  private readonly tasks: Tasks
-  private readonly app: App
-  private readonly plugin: TaskZeroPlugin
+  readonly #tasks: Tasks
+  readonly #app: App
+  readonly #plugin: TaskZeroPlugin
 
   id = 0
   status = $state(TaskStatus.TODO)
@@ -77,7 +77,7 @@ export class Task implements TaskRow {
   markdownComponent = new Component()
   markdownTaskParser: MarkdownTaskParser
 
-  private get DEFAULT_DATA (): TaskRow {
+  get #DEFAULT_DATA (): TaskRow {
     return {
       id: 0,
       status: TaskStatus.TODO,
@@ -95,22 +95,22 @@ export class Task implements TaskRow {
   }
 
   get blockPrefix () {
-    return this.tasks.blockPrefix
+    return this.#tasks.blockPrefix
   }
 
   constructor (tasks: Tasks) {
-    this.tasks = tasks
-    this.app = tasks.app
-    this.plugin = tasks.plugin
-    this.markdownTaskParser = new MarkdownTaskParser(this.plugin)
+    this.#tasks = tasks
+    this.#app = tasks.app
+    this.#plugin = tasks.plugin
+    this.markdownTaskParser = new MarkdownTaskParser(this.#plugin)
   }
 
   reset () {
-    this.setData(this.DEFAULT_DATA)
+    this.setData(this.#DEFAULT_DATA)
   }
 
   valid () {
-    return !!this.id || !this.text.trim()
+    return !!(this.id && this.text.trim() && !this.orphaned)
   }
 
   getData (): TaskRow {
@@ -156,20 +156,20 @@ export class Task implements TaskRow {
   }
 
   initFromId (id: number) {
-    const row = this.tasks.db.getRow(id)
+    const row = this.#tasks.db.getRow(id)
     if (row) {
       this.initFromRow(row)
     } else {
       this.reset()
     }
-    return this.resultFromInit()
+    return this.#resultFromInit()
   }
 
   initFromRow (row: TaskRow) {
     // Populate any missing data from DEFAULT_DATA
-    const data = assignExisting(this.DEFAULT_DATA, row)
+    const data = assignExisting(this.#DEFAULT_DATA, row)
     this.setData(data)
-    return this.resultFromInit()
+    return this.#resultFromInit()
   }
 
   initFromListItem (item: ListItemCache, cacheUpdate: CacheUpdate, previous: CacheUpdateItem[]) {
@@ -179,23 +179,23 @@ export class Task implements TaskRow {
     const parsedRes = this.markdownTaskParser.processTaskLine(originalLine)
     if (!parsedRes || parsedRes.excluded) {
       // Not able to find a task in this line
-      return this.resultFromInit(false)
+      return this.#resultFromInit(false)
     }
     const parsed = parsedRes.parsed
 
     // Check whether the note or section is excluded
-    if (noteIsExcluded(cacheUpdate, this.plugin)) {
-      return this.resultFromInit(false)
+    if (noteIsExcluded(cacheUpdate, this.#plugin)) {
+      return this.#resultFromInit(false)
     } else {
       const nearestHeading = cacheUpdate.cache.headings
         ?.filter(heading => heading.position.start.line < item.position.start.line)
         .pop()?.position.start.line
       const section = lines.slice(nearestHeading || 0, item.position.start.line).join('\n')
-      const tag = this.tasks.plugin.settings.excludeTags.section
+      const tag = this.#tasks.plugin.settings.excludeTags.section
       if (section.match(new RegExp(`(^|\\s)${tag}($|\\s)`, 'm'))) {
         // This section is excluded from processing
         debug(`Task ${parsed.text} is excluded from processing because of section tag ${tag}`)
-        return this.resultFromInit(false)
+        return this.#resultFromInit(false)
       }
     }
 
@@ -204,16 +204,16 @@ export class Task implements TaskRow {
     if (parsed.id && previousIds.includes(parsed.id)) parsed.id = 0
 
     // Default task
-    let record = this.DEFAULT_DATA
+    let record = this.#DEFAULT_DATA
 
     // Check DB for existing task
-    const existing = this.tasks.db.getRow(parsed.id || 0)
+    const existing = this.#tasks.db.getRow(parsed.id || 0)
 
     // Overwrite the base record with database-data (if any), then parsed data
     record = assignExisting(record, existing, parsed)
 
     // Does the task contain some text?
-    if (!record.text.trim()) return this.resultFromInit(false)
+    if (!record.text.trim()) return this.#resultFromInit(false)
 
     if (parsed.status === TaskStatus.DONE && (!existing || existing.status === TaskStatus.DONE)) {
       // If the task is completed AND the database task is also completed,
@@ -223,7 +223,7 @@ export class Task implements TaskRow {
       // This allows completed tasks to be archived to a "Completed task" note
       // without causing path etc to update.
       this.setData(record)
-      return this.resultFromInit(false)
+      return this.#resultFromInit(false)
     } else if (parsed.status === TaskStatus.DONE && existing?.status !== TaskStatus.DONE) {
       // If the task is completed and the database task is not completed,
       // set the completed date.
@@ -274,15 +274,15 @@ export class Task implements TaskRow {
     // Are there any changes from the DB record, and/or is a new record?
     const hasChanges = !existing || Object.keys(record).some(key => record[key] !== existing[key])
 
-    const result = this.tasks.db.insertOrUpdate(record)
+    const result = this.#tasks.db.insertOrUpdate(record)
     if (!result) {
       // Unable to insert data. Reset to default data, which will show task.valid() === false
       this.reset()
-      return this.resultFromInit(false)
+      return this.#resultFromInit(false)
     } else {
       this.setData(result)
     }
-    return this.resultFromInit(hasChanges)
+    return this.#resultFromInit(hasChanges)
   }
 
   /**
@@ -291,22 +291,22 @@ export class Task implements TaskRow {
    */
   initFromText (text: string) {
     const parsedRes = this.markdownTaskParser.processText(text)
-    const record = assignExisting(this.DEFAULT_DATA, parsedRes.parsed)
-    const result = this.tasks.db.insertOrUpdate(record)
+    const record = assignExisting(this.#DEFAULT_DATA, parsedRes.parsed)
+    const result = this.#tasks.db.insertOrUpdate(record)
     if (!result) {
       // Unable to insert data. Reset to default data, which will show task.valid() === false
       this.reset()
-      return this.resultFromInit()
+      return this.#resultFromInit()
     } else {
       this.setData(result)
     }
-    return this.resultFromInit()
+    return this.#resultFromInit()
   }
 
   /**
    * This is the standard result format from all the 'init' methods
    */
-  private resultFromInit (hasChanges = false): TaskInitResult {
+  #resultFromInit (hasChanges = false): TaskInitResult {
     return {
       task: this,
       hasChanges,
@@ -327,7 +327,7 @@ export class Task implements TaskRow {
     return this
   }
 
-  private getTypeSignifier () {
+  #getTypeSignifier () {
     if (this.isCompleted) return TaskEmoji.NONE // No need for signifier cluttering up the view for completed tasks
 
     const signifiers = [TaskType.PROJECT, TaskType.SOMEDAY, TaskType.WAITING_ON]
@@ -336,12 +336,12 @@ export class Task implements TaskRow {
     if (signifiers.includes(this.type)) {
       const key = Object.keys(TaskType).find(key => TaskType[key as keyof typeof TaskType] === this.type) || ''
       if (key === 'WAITING_ON') {
-        const displayOptions = this.tasks.plugin.settings.displayOptions
+        const displayOptions = this.#tasks.plugin.settings.displayOptions
         if (displayOptions.waitingOn === DisplayOption.TAG) {
           return '#' + TaskType.WAITING_ON
         } else if (displayOptions.waitingOn === DisplayOption.EMOJI) {
           return TaskEmoji.WAITING_ON
-        } else if (!this.plugin.isMaster()) {
+        } else if (!this.#plugin.isMaster()) {
           return TaskEmoji.WAITING_ON
         } else {
           return ''
@@ -354,43 +354,43 @@ export class Task implements TaskRow {
   }
 
   generateMarkdownTask () {
-    const displayOptions = this.tasks.plugin.settings.displayOptions
+    const displayOptions = this.#tasks.plugin.settings.displayOptions
 
     // Get indentation level
     let indent = 0
     let parent = this.parent
     while (parent) {
       indent++
-      parent = this.tasks.db.getRow(parent)?.parent || 0
+      parent = this.#tasks.db.getRow(parent)?.parent || 0
     }
 
     // Scheduled date
     let scheduled = ''
-    if (this.scheduled && (displayOptions.scheduled === DisplayOption.EMOJI || !this.plugin.isMaster())) {
+    if (this.scheduled && (displayOptions.scheduled === DisplayOption.EMOJI || !this.#plugin.isMaster())) {
       scheduled = TaskEmoji.SCHEDULED + ' ' + this.scheduled
     }
 
     // Due date
     let due = ''
-    if (this.due && (displayOptions.due === DisplayOption.EMOJI || !this.plugin.isMaster())) {
+    if (this.due && (displayOptions.due === DisplayOption.EMOJI || !this.#plugin.isMaster())) {
       due = TaskEmoji.DUE + ' ' + this.due
     }
 
     // Completed date
     let completed = ''
-    if (this.status === TaskStatus.DONE && (displayOptions.completed === DisplayOption.EMOJI || !this.plugin.isMaster())) {
+    if (this.status === TaskStatus.DONE && (displayOptions.completed === DisplayOption.EMOJI || !this.#plugin.isMaster())) {
       const date = this.completed ? moment(this.completed) : moment()
       completed = TaskEmoji.COMPLETED + ' ' + date.format('YYYY-MM-DD')
     }
 
     const parts = [
       '\t'.repeat(indent) + `- [${this.status}]`,
-      this.getTypeSignifier(),
+      this.#getTypeSignifier(),
       this.text,
       scheduled,
       due,
       completed,
-      '^' + this.tasks.blockPrefix + this.id
+      '^' + this.#tasks.blockPrefix + this.id
     ]
     return parts
       .filter(Boolean)
@@ -407,14 +407,14 @@ export class Task implements TaskRow {
     }
 
     // Update the DB with the new data
-    this.tasks.db.update(this.getData())
+    this.#tasks.db.update(this.getData())
     dbEvents.emit(DatabaseEvent.TasksChanged)
 
     // Render the markdown so it's available
     void this.renderMarkdown()
 
     // Queue the task for update in the original markdown note
-    this.tasks.addTaskToUpdateQueue(this.id)
+    this.#tasks.addTaskToUpdateQueue(this.id)
 
     return this
   }
@@ -426,15 +426,15 @@ export class Task implements TaskRow {
    * @param afterTask - (optional) Move it after the task with this ID
    */
   async move (toPath: string, beforeTask?: number, afterTask?: number) {
-    const newFile = this.app.vault.getFileByPath(toPath)
+    const newFile = this.#app.vault.getFileByPath(toPath)
     if (!newFile) return this
 
     // Remove the task from its current note
-    const currentFile = this.app.vault.getFileByPath(this.path)
+    const currentFile = this.#app.vault.getFileByPath(this.path)
     if (!currentFile) return this
-    await this.app.vault.process(currentFile, data => {
+    await this.#app.vault.process(currentFile, data => {
       const lines = data.split('\n')
-      const index = lines.findIndex(line => line.endsWith(` ^${this.tasks.blockPrefix}${this.id}`))
+      const index = lines.findIndex(line => line.endsWith(` ^${this.#tasks.blockPrefix}${this.id}`))
       if (index !== -1) lines.splice(index, 1)
       return lines.join('\n')
     })
@@ -443,14 +443,14 @@ export class Task implements TaskRow {
     let line = -1
     const existingId = beforeTask || afterTask
     if (existingId) {
-      const existingTask = this.tasks.getTaskById(existingId)
+      const existingTask = this.#tasks.getTaskById(existingId)
       if (existingTask.path === toPath) {
         line = beforeTask ? existingTask.line : existingTask.line + 1
       }
     }
 
     // Add task to new note
-    await this.app.vault.process(newFile, data => {
+    await this.#app.vault.process(newFile, data => {
       if (line >= 0) {
         // Insert task at the specific position
         const rows = data.split('\n')
@@ -468,7 +468,7 @@ export class Task implements TaskRow {
 
   async renderMarkdown () {
     const el = document.createElement('div')
-    await MarkdownRenderer.render(this.app, this.text, el, '', this.markdownComponent)
+    await MarkdownRenderer.render(this.#app, this.text, el, '', this.markdownComponent)
     this.renderedMarkdown = el.innerHTML
   }
 
@@ -479,7 +479,7 @@ export class Task implements TaskRow {
     const ancestors: Task[] = []
     let parentId = this.parent
     while (parentId) {
-      const parentTask = this.tasks.getTaskById(parentId)
+      const parentTask = this.#tasks.getTaskById(parentId)
       if (parentTask.valid()) {
         parentId = parentTask.parent
         ancestors.push(parentTask)
@@ -491,23 +491,23 @@ export class Task implements TaskRow {
   }
 
   get children (): Task[] {
-    return this.tasks.db.rows()
+    return this.#tasks.db.rows()
       .filter(row => row.parent === this.id)
-      .map(row => new Task(this.tasks).initFromRow(row).task)
+      .map(row => new Task(this.#tasks).initFromRow(row).task)
   }
 
   /**
    * Return all subtasks for this task/project (including completed tasks)
    */
   get descendants (): Task[] {
-    const tasks = this.tasks.db.rows().filter(row => row.parent > 0 && row.orphaned === 0)
+    const tasks = this.#tasks.db.rows().filter(row => row.parent > 0 && row.orphaned === 0)
 
     // Recursive function to get descendants
     const getDescendants = (parentId: number): Task[] => {
       return tasks
         .filter(row => row.parent === parentId)
         .map(row => [
-          new Task(this.tasks).initFromRow(row).task,
+          new Task(this.#tasks).initFromRow(row).task,
           ...getDescendants(row.id)
         ])
         .flat()
@@ -538,16 +538,16 @@ export class Task implements TaskRow {
     const line = (descendants.length ? descendants[descendants.length - 1].line : this.line) + 1
 
     // Create the new subtask
-    const subtask = new Task(this.tasks).initFromRow({
+    const subtask = new Task(this.#tasks).initFromRow({
       text: newTaskText
     } as TaskRow).task
     subtask.parent = this.id
     subtask.line = line
     if (type) subtask.type = type
 
-    const tfile = this.app.vault.getFileByPath(this.path)
+    const tfile = this.#app.vault.getFileByPath(this.path)
     if (tfile) {
-      await this.app.vault.process(tfile, data => {
+      await this.#app.vault.process(tfile, data => {
         const lines = data.split('\n')
         lines.splice(line, 0, subtask.generateMarkdownTask())
         return lines.join('\n')

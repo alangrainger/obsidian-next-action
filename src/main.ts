@@ -11,7 +11,7 @@ export default class TaskZeroPlugin extends Plugin {
   tasks!: Tasks
   settings!: TaskZeroSettings
   userActivity!: DetectUser
-  private updateQueue!: UpdateQueue
+  #updateQueue!: UpdateQueue
 
   async onload () {
     // Settings
@@ -19,7 +19,7 @@ export default class TaskZeroPlugin extends Plugin {
     this.addSettingTab(new DoSettingTab(this.app, this))
     this.applyRootClass()
     this.userActivity = new DetectUser()
-    this.updateQueue = new UpdateQueue(this)
+    this.#updateQueue = new UpdateQueue(this)
 
     this.tasks = new Tasks(this)
 
@@ -28,7 +28,7 @@ export default class TaskZeroPlugin extends Plugin {
       (leaf) => new TaskZeroView(leaf, this)
     )
     this.addRibbonIcon('square-check-big', 'Open Tasklist', () => {
-      void this.activateView()
+      void this.#activateView()
     })
 
     // Quick capture new task
@@ -41,7 +41,7 @@ export default class TaskZeroPlugin extends Plugin {
     this.addCommand({
       id: 'open-tasklist',
       name: 'Open the Tasklist',
-      callback: () => this.activateView()
+      callback: () => this.#activateView()
     })
 
     // Archive completed tasks from the active note
@@ -59,13 +59,13 @@ export default class TaskZeroPlugin extends Plugin {
     })
 
     // Queue note for update when metadata cache change detected
-    this.registerEvent(this.app.metadataCache.on('changed', file => this.updateQueue.add(file.path)))
+    this.registerEvent(this.app.metadataCache.on('changed', file => this.#updateQueue.add(file.path)))
 
     window.tz = this // Should be allowed - I got it from https://obsidian.md/plugins?id=kv-store
   }
 
   onunload () {
-    this.updateQueue.unload()
+    this.#updateQueue.unload()
     this.userActivity.unload()
     dbEvents.destroy()
     delete window.tz
@@ -98,7 +98,7 @@ export default class TaskZeroPlugin extends Plugin {
     }
   }
 
-  private async activateView () {
+  async #activateView () {
     let leaf: WorkspaceLeaf | null
     const leaves = this.app.workspace.getLeavesOfType(TASK_ZERO_VIEW_TYPE)
     if (leaves.length > 0) {
