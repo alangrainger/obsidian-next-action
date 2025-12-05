@@ -1,4 +1,8 @@
-/* Hide the block references in task lines */
+/*
+Make the block reference smaller.
+You can hide it completely with display:none if you wish, but it can
+cause issues when adding a newline after the last task in a list.
+*/
 body.task-zero .HyperMD-task-line .cm-blockid {
     opacity: 40%;
     font-size: 40%;
