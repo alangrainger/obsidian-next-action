@@ -1,7 +1,7 @@
 /* Hide the block references in task lines */
 body.task-zero .HyperMD-task-line .cm-blockid {
     opacity: 40%;
-    font-size: 40% !important;
+    font-size: 40%;
 }
 
 .task-zero-view {
