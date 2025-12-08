@@ -9,6 +9,7 @@
 
   function toggle(event: Event) {
     event.stopPropagation();
+    task.userIsActive()
     task.toggle()
   }
 </script>

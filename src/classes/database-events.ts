@@ -3,7 +3,8 @@ import { debug } from '../functions'
 export enum DatabaseEvent {
   TasksExternalChange = 'tz:tasks-external-change',
   TasksChanged = 'tz:tasks-changed',
-  OpenTasklistView = 'tz:open-tasklist-view'
+  OpenTasklistView = 'tz:open-tasklist-view',
+  TaskToggled = 'tz:task-toggled'
 }
 
 class DatabaseEventEmitter {

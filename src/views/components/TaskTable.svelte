@@ -123,7 +123,6 @@
     [hotkeys[HotkeyAction.TASKLIST_TOGGLE_COMPLETED], () => {
       activeTask.toggle()
       listDown()
-      debounceRefresh()
     }],
     [hotkeys[HotkeyAction.TASK_SET_TYPE_PROJECT], () => setTaskType(TaskType.PROJECT)],
     [hotkeys[HotkeyAction.TASK_SET_TYPE_NEXT_ACTION], () => setTaskType(TaskType.NEXT_ACTION)],
@@ -268,6 +267,7 @@
 
   // Update tasks list when tasks DB changes
   dbEvents.on(DatabaseEvent.TasksExternalChange, refresh)
+  dbEvents.on(DatabaseEvent.TaskToggled, debounceRefresh)
   dbEvents.on(DatabaseEvent.OpenTasklistView, () => state.viewIsActive = true)
   dbEvents.on(DatabaseEvent.TasksChanged, () => {
     if (!plugin.userActivity.isActive()) refresh()
@@ -289,6 +289,7 @@
    */
   export function unmount () {
     dbEvents.off(DatabaseEvent.TasksExternalChange, refresh)
+    dbEvents.off(DatabaseEvent.TaskToggled, debounceRefresh)
     dbEvents.off(DatabaseEvent.OpenTasklistView, () => state.viewIsActive = true)
     dbEvents.off(DatabaseEvent.TasksChanged, () => {
       if (!plugin.userActivity.isActive()) refresh()

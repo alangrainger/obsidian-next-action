@@ -316,6 +316,7 @@ export class Task implements TaskRow {
 
   toggle () {
     this.status = this.status === TaskStatus.DONE ? TaskStatus.TODO : TaskStatus.DONE
+    dbEvents.emit(DatabaseEvent.TaskToggled)
     this.update()
   }
 
@@ -555,5 +556,9 @@ export class Task implements TaskRow {
     }
 
     return subtask
+  }
+
+  userIsActive () {
+    this.#plugin.userActivity.updateActivity()
   }
 }
