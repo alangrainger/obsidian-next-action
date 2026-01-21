@@ -56,10 +56,6 @@ export interface TaskRow {
 }
 
 export class Task implements TaskRow {
-  readonly #tasks: Tasks
-  readonly #app: App
-  readonly #plugin: TaskZeroPlugin
-
   id = 0
   status = $state(TaskStatus.TODO)
   text = $state('')
@@ -72,31 +68,12 @@ export class Task implements TaskRow {
   due = ''
   scheduled = ''
   completed = ''
-
   renderedMarkdown = $state('')
   markdownComponent = new Component()
   markdownTaskParser: MarkdownTaskParser
-
-  get #DEFAULT_DATA (): TaskRow {
-    return {
-      id: 0,
-      status: TaskStatus.TODO,
-      text: '',
-      path: '',
-      orphaned: 0,
-      created: moment().format(),
-      type: TaskType.INBOX,
-      line: 0,
-      parent: 0,
-      due: '',
-      scheduled: '',
-      completed: ''
-    }
-  }
-
-  get blockPrefix () {
-    return this.#tasks.blockPrefix
-  }
+  readonly #tasks: Tasks
+  readonly #app: App
+  readonly #plugin: TaskZeroPlugin
 
   constructor (tasks: Tasks) {
     this.#tasks = tasks
@@ -105,33 +82,8 @@ export class Task implements TaskRow {
     this.markdownTaskParser = new MarkdownTaskParser(this.#plugin)
   }
 
-  reset () {
-    this.setData(this.#DEFAULT_DATA)
-  }
-
-  valid () {
-    return !!(this.id && this.text.trim() && !this.orphaned)
-  }
-
-  getData (): TaskRow {
-    return {
-      id: this.id,
-      status: this.status,
-      text: this.text,
-      path: this.path,
-      orphaned: this.orphaned,
-      created: this.created,
-      type: this.type,
-      line: this.line,
-      parent: this.parent,
-      due: this.due,
-      scheduled: this.scheduled,
-      completed: this.completed
-    }
-  }
-
-  setData (data: TaskRow) {
-    Object.keys(data).forEach(key => this[key] = data[key])
+  get blockPrefix () {
+    return this.#tasks.blockPrefix
   }
 
   get basename () {
@@ -157,6 +109,109 @@ export class Task implements TaskRow {
       const scheduled = moment(this.scheduled)
       if (scheduled.isSameOrBefore(today, 'day')) return scheduled
     }
+  }
+
+  /**
+   * Returns a list of all parents back to the root level
+   */
+  get ancestors (): Task[] {
+    const ancestors: Task[] = []
+    let parentId = this.parent
+    while (parentId) {
+      const parentTask = this.#tasks.getTaskById(parentId)
+      if (parentTask.valid()) {
+        parentId = parentTask.parent
+        ancestors.push(parentTask)
+      } else {
+        parentId = 0
+      }
+    }
+    return ancestors.reverse()
+  }
+
+  get children (): Task[] {
+    return this.#tasks.db.rows()
+      .filter(row => row.parent === this.id)
+      .map(row => new Task(this.#tasks).initFromRow(row).task)
+  }
+
+  /**
+   * Return all subtasks for this task/project (including completed tasks)
+   */
+  get descendants (): Task[] {
+    const tasks = this.#tasks.db.rows().filter(row => row.parent > 0 && row.orphaned === 0)
+
+    // Recursive function to get descendants
+    const getDescendants = (parentId: number): Task[] => {
+      return tasks
+        .filter(row => row.parent === parentId)
+        .map(row => [
+          new Task(this.#tasks).initFromRow(row).task,
+          ...getDescendants(row.id)
+        ])
+        .flat()
+        // Sort by the order they appear in the note
+        .sort((a, b) => a.line - b.line)
+    }
+
+    return getDescendants(this.id)
+  }
+
+  /**
+   * Return all uncompleted subtasks for this task/project
+   */
+  get activeDescendants (): Task[] {
+    return this.descendants.filter(child => !child.isCompleted)
+  }
+
+  get #DEFAULT_DATA (): TaskRow {
+    return {
+      id: 0,
+      status: TaskStatus.TODO,
+      text: '',
+      path: '',
+      orphaned: 0,
+      created: moment().format(),
+      type: TaskType.INBOX,
+      line: 0,
+      parent: 0,
+      due: '',
+      scheduled: '',
+      completed: ''
+    }
+  }
+
+  reset () {
+    this.setData(this.#DEFAULT_DATA)
+  }
+
+  valid () {
+    return !!(this.id && this.text.trim() && !this.orphaned)
+  }
+
+  get isValid () {
+    return this.valid()
+  }
+
+  getData (): TaskRow {
+    return {
+      id: this.id,
+      status: this.status,
+      text: this.text,
+      path: this.path,
+      orphaned: this.orphaned,
+      created: this.created,
+      type: this.type,
+      line: this.line,
+      parent: this.parent,
+      due: this.due,
+      scheduled: this.scheduled,
+      completed: this.completed
+    }
+  }
+
+  setData (data: TaskRow) {
+    Object.keys(data).forEach(key => this[key] = data[key])
   }
 
   initFromId (id: number) {
@@ -257,7 +312,7 @@ export class Task implements TaskRow {
         ancestors = ancestors.length ? ancestors : [parentTask]
         const rootParent = ancestors[0]
         if (previous.find(prev =>
-          prev.task.ancestors[0]?.id === rootParent.id  &&
+          prev.task.ancestors[0]?.id === rootParent.id &&
           !prev.task.isCompleted && prev.task.type !== TaskType.PROJECT)) {
           // There is at least one previous next action, therefore this task is dependent
           record.type = TaskType.DEPENDENT
@@ -294,27 +349,19 @@ export class Task implements TaskRow {
    * but will always create a new task as a block ID is not expected here.
    */
   initFromText (text: string) {
-    const parsedRes = this.markdownTaskParser.processText(text)
-    const record = assignExisting(this.#DEFAULT_DATA, parsedRes.parsed)
-    const result = this.#tasks.db.insertOrUpdate(record)
-    if (!result) {
-      // Unable to insert data. Reset to default data, which will show task.valid() === false
-      this.reset()
-      return this.#resultFromInit()
-    } else {
-      this.setData(result)
-    }
-    return this.#resultFromInit()
+    return this.#initFromTextOrMarkdownTask(text, false)
   }
 
   /**
-   * This is the standard result format from all the 'init' methods
+   * Create a task from a full markdown task line. If there is an existing task ID, it will use that
+   * to find the task.
    */
-  #resultFromInit (hasChanges = false): TaskInitResult {
-    return {
-      task: this,
-      hasChanges,
-      valid: this.valid()
+  initFromMarkdownTask (markdownTask: string) {
+    const idMatch = markdownTask.match(new RegExp(`\\^${this.blockPrefix}(\\d+)\\s*$`))
+    if (idMatch && idMatch[1]) {
+      return this.initFromId(+idMatch[1])
+    } else {
+      return this.#initFromTextOrMarkdownTask(markdownTask, true)
     }
   }
 
@@ -330,32 +377,6 @@ export class Task implements TaskRow {
       this.update()
     }
     return this
-  }
-
-  #getTypeSignifier () {
-    if (this.isCompleted) return TaskEmoji.NONE // No need for signifier cluttering up the view for completed tasks
-
-    const signifiers = [TaskType.PROJECT, TaskType.SOMEDAY, TaskType.WAITING_ON]
-    if (process.env.NODE_ENV === 'development') signifiers.push(TaskType.INBOX, TaskType.NEXT_ACTION, TaskType.DEPENDENT)
-
-    if (signifiers.includes(this.type)) {
-      const key = Object.keys(TaskType).find(key => TaskType[key as keyof typeof TaskType] === this.type) || ''
-      if (key === 'WAITING_ON') {
-        const displayOptions = this.#tasks.plugin.settings.displayOptions
-        if (displayOptions.waitingOn === DisplayOption.TAG) {
-          return '#' + TaskType.WAITING_ON
-        } else if (displayOptions.waitingOn === DisplayOption.EMOJI) {
-          return TaskEmoji.WAITING_ON
-        } else if (!this.#plugin.isMaster()) {
-          return TaskEmoji.WAITING_ON
-        } else {
-          return ''
-        }
-      } else {
-        return TaskEmoji[key as keyof typeof TaskEmoji] || TaskEmoji.NONE
-      }
-    }
-    return TaskEmoji.NONE
   }
 
   generateMarkdownTask () {
@@ -432,11 +453,17 @@ export class Task implements TaskRow {
    */
   async move (toPath: string, beforeTask?: number, afterTask?: number) {
     const newFile = this.#app.vault.getFileByPath(toPath)
-    if (!newFile) return this
+    if (!newFile) {
+      debug('Unable to move task to ' + toPath)
+      return this
+    }
 
     // Remove the task from its current note
     const currentFile = this.#app.vault.getFileByPath(this.path)
-    if (!currentFile) return this
+    if (!currentFile) {
+      debug('Unable to move task from ' + toPath)
+      return this
+    }
     await this.#app.vault.process(currentFile, data => {
       const lines = data.split('\n')
       const index = lines.findIndex(line => line.endsWith(` ^${this.#tasks.blockPrefix}${this.id}`))
@@ -478,59 +505,6 @@ export class Task implements TaskRow {
   }
 
   /**
-   * Returns a list of all parents back to the root level
-   */
-  get ancestors (): Task[] {
-    const ancestors: Task[] = []
-    let parentId = this.parent
-    while (parentId) {
-      const parentTask = this.#tasks.getTaskById(parentId)
-      if (parentTask.valid()) {
-        parentId = parentTask.parent
-        ancestors.push(parentTask)
-      } else {
-        parentId = 0
-      }
-    }
-    return ancestors.reverse()
-  }
-
-  get children (): Task[] {
-    return this.#tasks.db.rows()
-      .filter(row => row.parent === this.id)
-      .map(row => new Task(this.#tasks).initFromRow(row).task)
-  }
-
-  /**
-   * Return all subtasks for this task/project (including completed tasks)
-   */
-  get descendants (): Task[] {
-    const tasks = this.#tasks.db.rows().filter(row => row.parent > 0 && row.orphaned === 0)
-
-    // Recursive function to get descendants
-    const getDescendants = (parentId: number): Task[] => {
-      return tasks
-        .filter(row => row.parent === parentId)
-        .map(row => [
-          new Task(this.#tasks).initFromRow(row).task,
-          ...getDescendants(row.id)
-        ])
-        .flat()
-        // Sort by the order they appear in the note
-        .sort((a, b) => a.line - b.line)
-    }
-
-    return getDescendants(this.id)
-  }
-
-  /**
-   * Return all uncompleted subtasks for this task/project
-   */
-  get activeDescendants (): Task[] {
-    return this.descendants.filter(child => !child.isCompleted)
-  }
-
-  /**
    * Creates a subtask for the current task. This will convert the current task
    * to a project if not already the case.
    * It will add the subtask at the end of any existing subtasks.
@@ -568,5 +542,57 @@ export class Task implements TaskRow {
 
   async openLink () {
     return this.#app.workspace.openLinkText(this.basename, this.path)
+  }
+
+  #initFromTextOrMarkdownTask (text: string, isMarkdownTaskLine = false) {
+    const parsedRes = isMarkdownTaskLine ? this.markdownTaskParser.processTaskLine(text) : this.markdownTaskParser.processText(text)
+    if (parsedRes) {
+      const record = assignExisting(this.#DEFAULT_DATA, parsedRes.parsed)
+      const result = this.#tasks.db.insertOrUpdate(record)
+      if (result) {
+        this.setData(result)
+        return this.#resultFromInit()
+      }
+    }
+    // Unable to find/create task. Reset to default data, which will show task.valid() === false
+    this.reset()
+    return this.#resultFromInit()
+  }
+
+  /**
+   * This is the standard result format from all the 'init' methods
+   */
+  #resultFromInit (hasChanges = false): TaskInitResult {
+    return {
+      task: this,
+      hasChanges,
+      valid: this.valid()
+    }
+  }
+
+  #getTypeSignifier () {
+    if (this.isCompleted) return TaskEmoji.NONE // No need for signifier cluttering up the view for completed tasks
+
+    const signifiers = [TaskType.PROJECT, TaskType.SOMEDAY, TaskType.WAITING_ON]
+    if (process.env.NODE_ENV === 'development') signifiers.push(TaskType.INBOX, TaskType.NEXT_ACTION, TaskType.DEPENDENT)
+
+    if (signifiers.includes(this.type)) {
+      const key = Object.keys(TaskType).find(key => TaskType[key as keyof typeof TaskType] === this.type) || ''
+      if (key === 'WAITING_ON') {
+        const displayOptions = this.#tasks.plugin.settings.displayOptions
+        if (displayOptions.waitingOn === DisplayOption.TAG) {
+          return '#' + TaskType.WAITING_ON
+        } else if (displayOptions.waitingOn === DisplayOption.EMOJI) {
+          return TaskEmoji.WAITING_ON
+        } else if (!this.#plugin.isMaster()) {
+          return TaskEmoji.WAITING_ON
+        } else {
+          return ''
+        }
+      } else {
+        return TaskEmoji[key as keyof typeof TaskEmoji] || TaskEmoji.NONE
+      }
+    }
+    return TaskEmoji.NONE
   }
 }

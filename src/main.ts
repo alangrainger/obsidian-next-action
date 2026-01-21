@@ -6,6 +6,8 @@ import { debug } from './functions'
 import { DetectUser } from './classes/detect-user'
 import { UpdateQueue } from './classes/update-queue'
 import { DatabaseEvent, dbEvents } from './classes/database-events'
+import { Task } from './classes/task.svelte'
+import { MoveToProjectModal } from './views/move-to-project-modal'
 
 export default class TaskZeroPlugin extends Plugin {
   tasks!: Tasks
@@ -54,6 +56,26 @@ export default class TaskZeroPlugin extends Plugin {
           return !!view?.file
         } else if (view?.file) {
           void this.tasks.archiveTasksFromPath(view.file.path)
+        }
+      }
+    })
+
+    // Archive completed tasks from the active note
+    this.addCommand({
+      id: 'move-task-to-project',
+      name: 'Move task to project',
+      checkCallback: (checking: boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(MarkdownView)
+        if (checking && !view) return false
+
+        const editor = view?.editor
+        const line = editor?.getLine(editor.getCursor().line) || ''
+        const valid = !!(view?.file && line.match(new RegExp(`\\^${this.tasks.blockPrefix}(\\d+)$`)))
+        if (checking) {
+          return valid
+        } else if (valid) {
+          const task = new Task(this.tasks).initFromMarkdownTask(line).task
+          if (task.isValid) new MoveToProjectModal(this, task).open()
         }
       }
     })
